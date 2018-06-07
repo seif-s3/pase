@@ -18,6 +18,7 @@ class ArimaModel(object):
         self.data_clean[self.data_clean == -1] = np.nan
 
         self.data_clean[np.isnan(self.data_clean)] = np.nanmean(self.data_clean)
+        self._train_test_split('2018-04-01', '2018-04-21', '2018-04-22', '2014-04-30')
 
     def _train_test_split(self, train_start, train_end, test_start, test_end):
         self.training_data = self.data_clean[train_start:train_end]
