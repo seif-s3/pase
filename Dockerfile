@@ -11,5 +11,4 @@ WORKDIR /pase-fuoracle
 
 RUN pip install -r requirements.txt
 
-ENTRYPOINT ["python"]
-CMD ["./app.py"]
+CMD ["gunicorn", "--workers=2", "--bind=0.0.0.0:8000", "app:app"]
