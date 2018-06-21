@@ -12,3 +12,10 @@ This module will be responsible of the following:
 * Monitoring current traffic and retraining the model. 
 * Hot-swapping models to achieve highest accuracy
 
+## API Docs
+
+_Under Construction_
+
+`GET /predictions'`
+Schema to be specified
+
