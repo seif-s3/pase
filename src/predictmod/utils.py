@@ -18,7 +18,7 @@ def add_timestamps(data, output, start_at, delta='1 week'):
 
 def load_instana_data():
     def date_parser(dates):
-        return pd.datetime.strptime(dates, '%Y-%m-%d %H:%M:%S')
+        return pd.datetime.strptime(dates, '%Y-%m-%dT%H:%M:%SZ')
     data = pd.read_csv('/datasets/instana-with-timestamps.csv',
                        parse_dates=['timestamp'], index_col='timestamp', date_parser=date_parser)
     return data
