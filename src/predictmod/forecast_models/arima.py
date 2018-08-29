@@ -34,9 +34,9 @@ class ArimaModel(object):
         test = testing_data.values.copy()
         predictions = list()
         for t in range(len(test)):
-            model = arima_model.ARIMA(history, order=(2, 1, 0))
-            model_fit = model.fit(disp=-1)
-            output = model_fit.forecast()
+            self.model = arima_model.ARIMA(history, order=(2, 1, 0))
+            self.model_fit = self.model.fit(disp=-1)
+            output = self.model_fit.forecast()
             yhat = output[0]
             predictions.append(yhat)
             obs = test[t]
@@ -44,3 +44,7 @@ class ArimaModel(object):
             if verbose:
                 print >> sys.stderr, ('predicted=%f, expected=%f' % (yhat, obs))
         return test, predictions
+
+    def forecast(self, K):
+        # Forecasts K readings in the future
+        return self.model_fit.forecast(K)
