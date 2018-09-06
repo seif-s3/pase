@@ -1,5 +1,8 @@
-
-pase-predictmod:
-    build: ./
-    ports:
-        - "9999:9999"
+version: '3'
+services:
+    pase-predictmod:
+        build: ./
+        volumes:
+            - ./src:/app/
+        ports:
+            - "9090:80"
