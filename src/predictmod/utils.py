@@ -1,8 +1,29 @@
+import json
 import numpy as np
 import pandas as pd
 import pytz
 import matplotlib as plt
 import datetime
+import decimal
+from bson.dbref import DBRef
+from bson.objectid import ObjectId
+
+
+class MongoEncoder(json.JSONEncoder):
+    """Class to encode Mongo Document to a JSON friendly string."""
+
+    def default(self, value, **kwargs):
+        if isinstance(value, ObjectId):
+            return str(value)
+        if isinstance(value, DBRef):
+            return value.id
+        if isinstance(value, datetime.datetime):
+            return value.isoformat()
+        if isinstance(value, datetime.date):
+            return value.strftime("%Y-%m-%d")
+        if isinstance(value, decimal.Decimal):
+            return str(value)
+        return super(MongoEncoder, self).default(value, **kwargs)
 
 
 def add_timestamps(data, output, start_at, delta='1 week'):
@@ -14,6 +35,10 @@ def add_timestamps(data, output, start_at, delta='1 week'):
             t += datetime.timedelta(hours=1)
             out.write("{}, {}\n".format(t, v))
     out.close()
+
+
+def get_series(data, index):
+    return data.loc[data['series'] == index].drop('series', axis=1)
 
 
 def load_instana_data():
@@ -42,10 +67,6 @@ def plot_series(data, index):
     series = data.loc[data['series'] == index].drop('series', axis=1)
     plt.plot(series)
     plt.show()
-
-
-def get_series(data, index):
-    return data.loc[data['series'] == index].drop('series', axis=1)
 
 
 def utcnow():
