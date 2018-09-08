@@ -6,3 +6,13 @@ services:
             - ./src:/app/
         ports:
             - "9090:80"
+        depends_on:
+            - mongodb
+
+    mongodb:
+        image: mongo
+        restart: always
+        environment:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: example
+          MONGO_INITDB_DATABASE: 'pase'
