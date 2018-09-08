@@ -34,3 +34,4 @@ def healthcheck():
 
 
 import apis.predict
+import apis.models
