@@ -5,6 +5,7 @@ import pytz
 import matplotlib as plt
 import datetime
 import decimal
+import uuid
 from bson.dbref import DBRef
 from bson.objectid import ObjectId
 
@@ -72,3 +73,7 @@ def plot_series(data, index):
 def utcnow():
     """Returns the current UTC datetime. For easy replacement during testing."""
     return datetime.datetime.now(pytz.utc)
+
+
+def generate_uuid():
+    return str(uuid.uuid1())
