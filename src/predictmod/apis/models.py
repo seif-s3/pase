@@ -35,8 +35,17 @@ class Models(rest.Resource):
 class ActivateModel(rest.Resource):
 
     def post(self, model_id):
-        # Delete Current Model in use
         try:
+            # Check model_id is valid
+            found = mongo.db.models.find_one({'id': model_id})
+            if found is None:
+                return flask.jsonify(
+                    {
+                        'status': '500',
+                        'message': 'Model with id {} is not saved'.format(model_id)
+                    }
+                )
+            # Delete Current Model in use
             mongo.db.active_model.drop()
             # Attempt inserting model_id
             inserted = mongo.db.active_model.insert_one({'model_id': model_id})
