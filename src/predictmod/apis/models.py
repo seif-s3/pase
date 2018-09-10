@@ -25,7 +25,7 @@ class Models(rest.Resource):
             return flask.jsonify(
                 {
                     'status': '500',
-                    'message': 'Error Decoding Result'
+                    'message': 'Error Decoding Result: {}'.format(e.message)
                 }
             )
 
