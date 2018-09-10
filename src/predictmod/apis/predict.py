@@ -18,6 +18,12 @@ class Predict(rest.Resource):
         # TODO: Validate params are in expected format
 
         # Granularity by default is 1 hour
+        '''
+        Steps:
+        1- Check if there's a saved model
+        2- Load saved model and do predictions
+        3- If no model is saved -> create new model, train and predict. 
+        '''
         model = ArimaModel()
         test, predictions = model.train_model_on_batch(model.training_data, model.testing_data)
 
