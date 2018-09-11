@@ -33,11 +33,8 @@ def get_active_model():
     query_result = mongo.db.active_model.find()
     encoder = MongoEncoder()
     docs = [json.loads(encoder.encode(doc)) for doc in query_result]
-    import sys
-    print >> sys.stderr, docs
     if len(docs) == 1:
         return docs[0]['model_id']
-
     else:
         return None
 
