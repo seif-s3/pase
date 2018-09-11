@@ -44,7 +44,7 @@ def get_series(data, index):
 
 def load_instana_data():
     def date_parser(dates):
-        return pd.datetime.strptime(dates, '%Y-%m-%dT%H:%M:%SZ')
+        return pd.datetime.strptime(dates, '%Y-%m-%dT%H:%M:%S')
     data = pd.read_csv('/datasets/instana-with-timestamps.csv',
                        parse_dates=['timestamp'], index_col='timestamp', date_parser=date_parser)
     return data
@@ -80,6 +80,7 @@ def generate_uuid():
 
 
 def get_time_difference(t1, t2):
+    """Return the differece in hours between two string timestamp as an integer."""
     FMT = '%Y-%m-%dT%H:%M:%S'
     delta = (datetime.datetime.strptime(t2, FMT) - datetime.datetime.strptime(t1, FMT))
     return int(delta.total_seconds() / 60.0 / 60.0)
