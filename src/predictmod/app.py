@@ -12,6 +12,8 @@ CORS(app, origins=[r'.*localhost:5000$',
                    r'.*localhost:9999$'])
 
 
+app.config['UPLOAD_FOLDER'] = '/datasets'
+
 # MongoDB Initialization
 app.config['MONGODB_HOST'] = os.environ.get('MONGODB_HOST', 'localhost')
 app.config['MONGODB_PORT'] = os.environ.get('MONGODB_PORT', 27017)
@@ -35,3 +37,4 @@ def healthcheck():
 
 import apis.predict
 import apis.models
+import apis.upload
