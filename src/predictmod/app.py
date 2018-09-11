@@ -16,7 +16,7 @@ CORS(app, origins=[r'.*localhost:5000$',
 app.config['MONGODB_HOST'] = os.environ.get('MONGODB_HOST', 'localhost')
 app.config['MONGODB_PORT'] = os.environ.get('MONGODB_PORT', 27017)
 app.config['MONGO_URI'] = os.environ.get(
-    'MONGODB_URI', 'mongodb://{user}:{pwd}@mongodb:27017/pase'.format(user='admin', pwd='pass123'))
+    'MONGODB_URI', 'mongodb://{user}:{pwd}@mongodb:27017/pase'.format(user='root', pwd='example'))
 
 mongo = PyMongo(app)
 
