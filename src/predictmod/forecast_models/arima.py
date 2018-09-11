@@ -14,19 +14,22 @@ arima_model.ARIMA.__getnewargs__ = __getnewargs__
 
 class ArimaModel(object):
 
-    def __init__(self):
+    def __init__(self, load_id=None):
         # TODO: If we are instantiating a new model, train it from the CSV
         # TODO: Parametarize csv file
-        self.series = np.genfromtxt(
-            '/datasets/instana.csv', delimiter=',', usecols=range(0, 672), invalid_raise=False)
-        self.data = utils.load_instana_data()
+        if load_id is None:
+            self.series = np.genfromtxt(
+                '/datasets/instana.csv', delimiter=',', usecols=range(0, 672), invalid_raise=False)
+            self.data = utils.load_instana_data()
 
-        # Preprocessing
-        self.data_clean = self.data.copy()
-        self.data_clean[self.data_clean == -1] = np.nan
+            # Preprocessing
+            self.data_clean = self.data.copy()
+            self.data_clean[self.data_clean == -1] = np.nan
 
-        self.data_clean[np.isnan(self.data_clean)] = np.nanmean(self.data_clean)
-        self._train_test_split(505, 168)
+            self.data_clean[np.isnan(self.data_clean)] = np.nanmean(self.data_clean)
+            self._train_test_split(505, 168)
+        else:
+            self.load_model(load_id)
 
     def _train_test_split(self, train, test):
         self.training_data = self.data_clean.head(train)
@@ -53,7 +56,16 @@ class ArimaModel(object):
 
     def forecast(self, K):
         # Forecasts K readings in the future
-        return self.model_fit.forecast(K)
+        # Returns
+        # -------
+        # forecast : array
+        #     Array of out of sample forecasts
+        # stderr : array
+        #     Array of the standard error of the forecasts.
+        # conf_int : array
+        #     2d array of the confidence interval for the forecast
+        forecast, stderr, conf_int = self.model_fit.forecast(K)
+        return forecast
 
     def save_model(self):
         # Make sure we have a saved model
@@ -78,4 +90,5 @@ class ArimaModel(object):
             self.model_fit.save('/trained_models/{}.pkl'.format(model_id))
 
     def load_model(self, model_id):
+        print >> sys.stderr, "Loading model file /trained_models/{}.pkl".format(model_id)
         self.model_fit = arima_model.ARIMAResults.load('/trained_models/{}.pkl'.format(model_id))

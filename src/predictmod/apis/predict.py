@@ -1,9 +1,10 @@
 from predictmod.app import api
 from predictmod.forecast_models.arima import ArimaModel
+from predictmod import utils
 import flask_restful as rest
 import flask
 import datetime
-
+import sys
 
 class Predict(rest.Resource):
 
@@ -24,8 +25,23 @@ class Predict(rest.Resource):
         2- Load saved model and do predictions
         3- If no model is saved -> create new model, train and predict. 
         '''
-        model = ArimaModel()
-        test, predictions = model.train_model_on_batch(model.training_data, model.testing_data)
+        active_model = utils.get_active_model()
+        print >> sys.stderr, "Active Model: {}".format(active_model)
+        if active_model:
+            model = ArimaModel(load_id=active_model)
+            predictions = model.forecast(10)
+            print >> sys.stderr, predictions
+            ret = []
+            start_time = datetime.datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%SZ')
+            end_time = datetime.datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%SZ')
+            t = start_time
+            for p in predictions:
+                ret.append({'time-stamp': t.strftime('%Y-%m-%dT%H:%M:%SZ'), 'requests': p})
+                t += datetime.timedelta(hours=1)
+            return flask.jsonify({'id': 1, 'values': ret})
+        else:
+            model = ArimaModel()
+            test, predictions = model.train_model_on_batch(model.training_data, model.testing_data)
 
         to_forecast = 0
         start_time = datetime.datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%SZ')
