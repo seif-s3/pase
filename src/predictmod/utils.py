@@ -8,7 +8,6 @@ import decimal
 import uuid
 from bson.dbref import DBRef
 from bson.objectid import ObjectId
-from predictmod.app import mongo
 
 
 class MongoEncoder(json.JSONEncoder):
@@ -28,20 +27,6 @@ class MongoEncoder(json.JSONEncoder):
         return super(MongoEncoder, self).default(value, **kwargs)
 
 
-def get_active_model():
-    """Returns the id of the active model or None if there aren't any active models."""
-    query_result = mongo.db.active_model.find()
-    encoder = MongoEncoder()
-    docs = [json.loads(encoder.encode(doc)) for doc in query_result]
-    import sys
-    print >> sys.stderr, docs
-    if len(docs) == 1:
-        return docs[0]['model_id']
-
-    else:
-        return None
-
-
 def add_timestamps(data, output, start_at, delta='1 week'):
     out = open(output, 'w')
     t = datetime.strptime(start_at, '%Y-%m-%d %H:%M:%S')
@@ -59,7 +44,7 @@ def get_series(data, index):
 
 def load_instana_data():
     def date_parser(dates):
-        return pd.datetime.strptime(dates, '%Y-%m-%dT%H:%M:%SZ')
+        return pd.datetime.strptime(dates, '%Y-%m-%dT%H:%M:%S')
     data = pd.read_csv('/datasets/instana-with-timestamps.csv',
                        parse_dates=['timestamp'], index_col='timestamp', date_parser=date_parser)
     return data
@@ -92,3 +77,10 @@ def utcnow():
 
 def generate_uuid():
     return str(uuid.uuid1())
+
+
+def get_time_difference(t1, t2):
+    """Return the differece in hours between two string timestamp as an integer."""
+    FMT = '%Y-%m-%dT%H:%M:%S'
+    delta = (datetime.datetime.strptime(t2, FMT) - datetime.datetime.strptime(t1, FMT))
+    return int(delta.total_seconds() / 60.0 / 60.0)
