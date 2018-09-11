@@ -14,6 +14,13 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def get_datasets():
+    return [
+        f for f in listdir(
+            app.config['UPLOAD_FOLDER']) if isfile(join(app.config['UPLOAD_FOLDER'], f))
+    ]
+
+
 class Upload(rest.Resource):
     def post(self):
         if 'file' not in request.files:
@@ -26,16 +33,18 @@ class Upload(rest.Resource):
             flash('No selected file')
             return redirect(request.url)
         if file and allowed_file(file.filename):
+            overwritten = False
             filename = secure_filename(file.filename)
+            datasets = get_datasets()
+            if filename in datasets:
+                overwritten = True
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-            datasets = [
-                f for f in listdir(
-                    app.config['UPLOAD_FOLDER']) if isfile(join(app.config['UPLOAD_FOLDER'], f))
-            ]
+            # Get datasets after saving file
+            datasets = get_datasets()
             return jsonify(
                 {
                     'uploaded': True,
+                    'overwritten': overwritten,
                     'datasets': datasets
                 }
             )
