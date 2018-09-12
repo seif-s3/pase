@@ -3,6 +3,7 @@ import flask_restful as rest
 import flask
 import json
 from predictmod.utils import MongoEncoder
+from predictmod import db_helper
 
 
 class Models(rest.Resource):
@@ -30,6 +31,31 @@ class Models(rest.Resource):
             )
 
         return flask.jsonify(docs)
+
+
+class ActiveModel(rest.Resource):
+
+    def get(self):
+        try:
+            active_model_id = db_helper.get_active_model()
+            if active_model_id is None:
+                return flask.jsonify(
+                    {
+                        'status': 404,
+                        'message': "No trained model found, please activate a model \
+                                    using /activate_model/<model_id>"
+                    }
+                )
+            active_model = db_helper.get_model_by_id(active_model_id)
+            return flask.jsonify(active_model)
+
+        except Exception as e:
+            return flask.jsonify(
+                {
+                    'status': '500',
+                    'message': e.message
+                }
+            )
 
 
 class ActivateModel(rest.Resource):
@@ -68,3 +94,4 @@ class ActivateModel(rest.Resource):
 
 api.add_resource(Models, '/models')
 api.add_resource(ActivateModel, '/activate_model/<model_id>')
+api.add_resource(ActiveModel, '/active_model')
