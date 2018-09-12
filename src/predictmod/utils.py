@@ -6,8 +6,11 @@ import matplotlib as plt
 import datetime
 import decimal
 import uuid
+from os import listdir
+from os.path import isfile, join
 from bson.dbref import DBRef
 from bson.objectid import ObjectId
+from predictmod.app import app
 
 
 class MongoEncoder(json.JSONEncoder):
@@ -36,6 +39,13 @@ def add_timestamps(data, output, start_at, delta='1 week'):
             t += datetime.timedelta(hours=1)
             out.write("{}, {}\n".format(t, v))
     out.close()
+
+
+def get_datasets():
+    return [
+        f for f in listdir(
+            app.config['UPLOAD_FOLDER']) if isfile(join(app.config['UPLOAD_FOLDER'], f))
+    ]
 
 
 def get_series(data, index):

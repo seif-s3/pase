@@ -2,11 +2,11 @@ import os
 import sys
 import flask_restful as rest
 import csv
-from os import listdir
-from os.path import isfile, join
-from flask import flash, jsonify, request, redirect, make_response
+from flask import jsonify, request, make_response
 from werkzeug.utils import secure_filename
 from predictmod.app import app, api
+from predictmod import utils
+
 
 ALLOWED_EXTENSIONS = ['csv']
 
@@ -14,13 +14,6 @@ ALLOWED_EXTENSIONS = ['csv']
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-def get_datasets():
-    return [
-        f for f in listdir(
-            app.config['UPLOAD_FOLDER']) if isfile(join(app.config['UPLOAD_FOLDER'], f))
-    ]
 
 
 def validate_csv(file):
@@ -71,14 +64,14 @@ class Upload(rest.Resource):
             # Check if file already exists, in which case we'll overwrite it.
             overwritten = False
             filename = secure_filename(file.filename)
-            datasets = get_datasets()
+            datasets = utils.get_datasets()
             if filename in datasets:
                 overwritten = True
 
             try:
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 # Get datasets after saving file
-                datasets = get_datasets()
+                datasets = utils.get_datasets()
                 return jsonify(
                     {
                         'uploaded': True,
