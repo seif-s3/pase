@@ -1,4 +1,4 @@
-from predictmod.app import api
+from predictmod.app import api, mongo
 from predictmod.forecast_models.arima import ArimaModel
 from predictmod import db_helper
 from predictmod import utils
@@ -56,11 +56,32 @@ class Predict(rest.Resource):
             # Discard first S predictions since they are not required in the response
             predictions_trimmed = predictions[S:]
             ret = []
+            arr = []
             t = start_time
             for p in predictions_trimmed:
+                arr.append(p)
                 ret.append({'time-stamp': t.strftime('%Y-%m-%dT%H:%M:%S'), 'requests': p})
                 t += datetime.timedelta(hours=1)
-            return flask.jsonify({'id': 1, 'values': ret})
+
+            pid = utils.generate_uuid()
+            to_save = {
+                'id': pid,
+                'start_time': start_time,
+                'end_time': end_time,
+                'values': arr,
+                'granularity': 'hour',
+                'is_valid': True,
+                'generated_at': utils.utcnow(),
+                'model': active_model
+            }
+            inserted = mongo.db.predictions.insert_one(to_save)
+            if inserted.inserted_id:
+                return flask.jsonify(
+                    {
+                        'id': pid,
+                        'values': ret
+                    }
+                )
         else:
             return flask.jsonify(
                 {
