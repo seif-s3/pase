@@ -5,6 +5,7 @@ import flask
 import json
 import random
 import sys
+import requests
 from predictmod.utils import MongoEncoder
 from predictmod import utils
 from predictmod import db_helper
@@ -55,13 +56,18 @@ class Subscribe(rest.Resource):
                     }
                 )
 
+            # Cast thresholds to floats
+            float_thresholds = []
+            for t in args.thresholds:
+                float_thresholds.append(float(t))
+
             # Save subscriber
             sub_id = utils.generate_uuid()
             doc = {
                 'id': sub_id,
                 'url': args.url,
                 'predictions': predictions['values'],
-                'thresholds': args.thresholds,
+                'thresholds': float_thresholds,
                 'registered_at': utils.utcnow(),
                 'notified_at': None
             }
@@ -88,27 +94,36 @@ class Subscribe(rest.Resource):
 class TestSubscribe(rest.Resource):
 
     def get(self, id):
-        try:
-            subscriber = db_helper.get_subscriber_by_id(id)
-            predictions = subscriber['predictions']
-            thresholds = subscriber['thresholds']
-
-            mock = []
-            for p, t in zip(predictions, thresholds):
-                mock.append(p + (t * random.choice([1, 0]) + (random.random() * p)))
-
+        subscriber = db_helper.get_subscriber_by_id(id)
+        if subscriber is None:
             return flask.jsonify(
                 {
-                    'id': utils.generate_uuid(),
-                    'values': mock
+                    'error': 'No subscriber with ID {}'.format(id)
                 }
             )
-        except Exception as e:
-            return flask.jsonify(
-                {
-                    'error': e.message
-                }
-            )
+
+        predictions = subscriber['predictions']
+        thresholds = subscriber['thresholds']
+        url = subscriber['url']
+
+        mock = []
+        for p, t in zip(predictions, thresholds):
+            print >> sys.stderr, type(p), type(t)
+            mock.append(p + (t * random.choice([1, 0])) + (random.random() * p))
+
+        response = {
+            'id': utils.generate_uuid(),
+            'values': mock
+        }
+
+        result = requests.post(url, json=response)
+
+        mock_resonse = {
+            'url': url,
+            'json': response,
+            'result': result.text
+        }
+        return flask.jsonify(mock_resonse)
 
 
 api.add_resource(Subscribe, '/subscribe')
