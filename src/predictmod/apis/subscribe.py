@@ -4,6 +4,7 @@ import flask_restful as rest
 import flask
 import json
 import random
+import sys
 from predictmod.utils import MongoEncoder
 from predictmod import utils
 from predictmod import db_helper
@@ -12,7 +13,7 @@ from predictmod import db_helper
 def makeSubscribeParser(for_update=False):
     parser = reqparse.RequestParser(trim=True)
     parser.add_argument('url', required=True, nullable=False)
-    parser.add_argument('thresholds', required=True, nullable=False)
+    parser.add_argument('thresholds', action='append', required=True, nullable=False)
     parser.add_argument('predictions_id', required=True, nullable=False)
     return parser
 
@@ -55,8 +56,9 @@ class Subscribe(rest.Resource):
                 )
 
             # Save subscriber
+            sub_id = utils.generate_uuid()
             doc = {
-                'id': utils.generate_uuid(),
+                'id': sub_id,
                 'url': args.url,
                 'predictions': predictions['values'],
                 'thresholds': args.thresholds,
@@ -66,7 +68,7 @@ class Subscribe(rest.Resource):
             inserted = mongo.db.subscribers.insert_one(doc)
             encoder = MongoEncoder()
             if inserted.inserted_id:
-                in_db = db_helper.get_subscriber_by_id(encoder.encode(inserted.inserted_id))
+                in_db = db_helper.get_subscriber_by_id(sub_id)
                 return flask.jsonify(
                     {
                         'registered': True,
@@ -110,4 +112,4 @@ class TestSubscribe(rest.Resource):
 
 
 api.add_resource(Subscribe, '/subscribe')
-api.add_resource(Subscribe, '/test_sub/<id>')
+api.add_resource(TestSubscribe, '/test_sub/<id>')
