@@ -14,20 +14,26 @@ arima_model.ARIMA.__getnewargs__ = __getnewargs__
 
 class ArimaModel(object):
 
-    def __init__(self, load_id=None):
+    def _instata(self):
+        self.data = utils.load_instana_data()
+
+        # Preprocessing
+        self.data_clean = self.data.copy()
+        self.data_clean[self.data_clean == -1] = np.nan
+
+        self.data_clean[np.isnan(self.data_clean)] = np.nanmean(self.data_clean)
+
+    def __init__(self, load_id=None, dataset=None):
         # TODO: If we are instantiating a new model, train it from the CSV
         # TODO: Parametarize csv file
-        if load_id is None:
-            self.series = np.genfromtxt(
-                '/datasets/instana.csv', delimiter=',', usecols=range(0, 672), invalid_raise=False)
-            self.data = utils.load_instana_data()
-
-            # Preprocessing
-            self.data_clean = self.data.copy()
-            self.data_clean[self.data_clean == -1] = np.nan
-
-            self.data_clean[np.isnan(self.data_clean)] = np.nanmean(self.data_clean)
-            self._train_test_split(505, 168)
+        if load_id is None and dataset:
+            # Instana data has a special format so it will be parsed differently
+            if dataset == 'instana.csv':
+                self._instata()
+                self._train_test_split(505, 168)
+            else:
+                # TODO: Add logic for general CSVs here
+                pass
         else:
             self.load_model(load_id)
 
@@ -51,7 +57,6 @@ class ArimaModel(object):
             history.append(yhat)
             if verbose:
                 print >> sys.stderr, ('predicted=%f, expected=%f' % (yhat, obs))
-        self.save_model()
         return test, predictions
 
     def forecast(self, K):
@@ -67,7 +72,7 @@ class ArimaModel(object):
         forecast, stderr, conf_int = self.model_fit.forecast(K)
         return forecast
 
-    def save_model(self):
+    def save_model(self, dataset):
         # Make sure we have a saved model
         if self.model_fit:
             model_id = utils.generate_uuid()
@@ -76,18 +81,19 @@ class ArimaModel(object):
                 'id': model_id,     # Model ID used to fetch from the trained_models directory
                 'algorithm': 'ARIMA',
                 'input_type': 'csv',    # Whether this model was trained from a batch CSV or Influx
-                'input_start': self.data_clean.index.min(), # Starting timestamp of training data
+                'input_start': self.data_clean.index.min(),   # Starting timestamp of training data
                 'input_end': self.data_clean.index.max(),   # Ending timestamp of training data
                 'acquisition_time': utils.utcnow(),
                 'metadata': {
                     'p': 2,
                     'd': 1,
                     'q': 0,
-                    'dataset': 'instana.csv'
+                    'dataset': dataset
                 }
             }
             mongo.db.models.insert_one(mongo_doc)
             self.model_fit.save('/trained_models/{}.pkl'.format(model_id))
+            return model_id
 
     def load_model(self, model_id):
         print >> sys.stderr, "Loading model file /trained_models/{}.pkl".format(model_id)

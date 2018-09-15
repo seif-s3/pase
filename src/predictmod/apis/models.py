@@ -1,9 +1,18 @@
 from predictmod.app import app, api, mongo
+from flask_restful import reqparse
 import flask_restful as rest
 import flask
 import json
 from predictmod.utils import MongoEncoder
 from predictmod import db_helper
+from predictmod.forecast_models import arima
+
+
+def makeTrainModelOnCsvParser(for_update=False):
+    parser = reqparse.RequestParser(trim=True)
+    parser.add_argument('algorithm', required=True, nullable=False)
+    parser.add_argument('dataset', required=True, nullable=False)
+    return parser
 
 
 class Models(rest.Resource):
@@ -92,6 +101,19 @@ class ActivateModel(rest.Resource):
             )
 
 
+class TrainModelOnCsv(rest.Resource):
+
+    def post(self):
+        args = makeTrainModelOnCsvParser().parse_args()
+        if args.algorithm == 'ARIMA':
+            """Train model from instana data."""
+            model = arima.ArimaModel(load_id=None, dataset='instana.csv')
+            test, predictions = model.train_model_on_batch(model.training_data, model.testing_data)
+            model_id = model.save_model('instana.csv')
+            return flask.jsonify(db_helper.get_model_by_id(model_id))
+
+
 api.add_resource(Models, '/models')
 api.add_resource(ActivateModel, '/activate_model/<model_id>')
 api.add_resource(ActiveModel, '/active_model')
+api.add_resource(TrainModelOnCsv, '/train_model_csv')
