@@ -35,9 +35,10 @@ class Predict(rest.Resource):
                 model_attributes = db_helper.get_model_by_id(active_model)
 
                 # K is the number of units (typically hours) we need to forecast
+                # K + 1 to include the start timestamp (consider it 0 indexed)
                 # S is the number of units to skip from input_end to start_time
                 # HACK: remove the Z in the end of the start and end timestamps
-                K = utils.get_time_difference(model_attributes['input_end'], end_time[:-1])
+                K = utils.get_time_difference(model_attributes['input_end'], end_time[:-1]) + 1
                 S = utils.get_time_difference(model_attributes['input_end'], start_time[:-1])
 
                 if S > K:
