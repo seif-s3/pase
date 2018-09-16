@@ -116,13 +116,25 @@ class TestSubscribe(rest.Resource):
             'values': mock
         }
 
-        result = requests.post(url, json=response)
+        try:
+            fail = False
+            result = requests.post(url, json=response)
+        except Exception as e:
+            fail = True
+            result = 'Error sending POST request to {}: {}'.format(url, e.message)
 
-        mock_resonse = {
-            'url': url,
-            'json': response,
-            'result': result.text
-        }
+        if fail:
+            mock_resonse = {
+                'status': 'Fail',
+                'result': result
+            }
+        else:
+            mock_resonse = {
+                'url': url,
+                'json': response,
+                'status': 'Success',
+                'result': result.text
+            }
         return flask.jsonify(mock_resonse)
 
 
