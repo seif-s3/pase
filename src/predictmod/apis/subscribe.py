@@ -108,7 +108,7 @@ class TestSubscribe(rest.Resource):
         url = subscriber['url']
 
         mock = []
-        ts = datetime.datetime.strptime(predictions['start_time'], '%Y-%m-%dT%H:%M:%S')
+        ts = datetime.datetime.strptime(predictions['start_time'], '%Y-%m-%dT%H:%M:%SZ')
         print >> sys.stderr, ts, type(ts)
         for p, t in zip(predictions['values'], thresholds):
             mock.append(
