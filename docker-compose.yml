@@ -4,6 +4,8 @@ services:
         build: ./
         volumes:
             - ./src:/app/
+            - ./datasets:/datasets/
+            - ./trained_models:/trained_models/
         ports:
             - "9090:80"
         depends_on:
