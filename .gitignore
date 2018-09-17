@@ -105,3 +105,6 @@ venv.bak/
 
 # exclude notebooks
 notebooks/
+
+# exclude trained models
+trained_models/*.pkl
