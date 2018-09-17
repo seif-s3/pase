@@ -22,7 +22,8 @@ class MongoEncoder(json.JSONEncoder):
         if isinstance(value, DBRef):
             return value.id
         if isinstance(value, datetime.datetime):
-            return value.isoformat()
+            # Append a Z to the parsed datetime
+            return value.isoformat() + 'Z'
         if isinstance(value, datetime.date):
             return value.strftime("%Y-%m-%d")
         if isinstance(value, decimal.Decimal):
@@ -54,7 +55,7 @@ def get_series(data, index):
 
 def load_instana_data():
     def date_parser(dates):
-        return pd.datetime.strptime(dates, '%Y-%m-%dT%H:%M:%S')
+        return pd.datetime.strptime(dates, '%Y-%m-%dT%H:%M:%SZ')
     data = pd.read_csv('/datasets/instana-with-timestamps.csv',
                        parse_dates=['timestamp'], index_col='timestamp', date_parser=date_parser)
     return data
@@ -91,6 +92,6 @@ def generate_uuid():
 
 def get_time_difference(t1, t2):
     """Return the differece in hours between two string timestamp as an integer."""
-    FMT = '%Y-%m-%dT%H:%M:%S'
+    FMT = '%Y-%m-%dT%H:%M:%SZ'
     delta = (datetime.datetime.strptime(t2, FMT) - datetime.datetime.strptime(t1, FMT))
     return int(delta.total_seconds() / 60.0 / 60.0)

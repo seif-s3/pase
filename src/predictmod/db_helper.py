@@ -24,3 +24,9 @@ def get_subscriber_by_id(sub_id):
     query_result = mongo.db.subscribers.find_one({'id': sub_id})
     encoder = MongoEncoder()
     return json.loads(encoder.encode(query_result))
+
+
+def get_predictions_by_id(pred_id):
+    query_result = mongo.db.predictions.find_one({'id': pred_id})
+    encoder = MongoEncoder()
+    return json.loads(encoder.encode(query_result))

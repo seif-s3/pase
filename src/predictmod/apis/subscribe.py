@@ -6,6 +6,7 @@ import json
 import random
 import sys
 import requests
+import datetime
 from predictmod.utils import MongoEncoder
 from predictmod import utils
 from predictmod import db_helper
@@ -25,16 +26,15 @@ class Subscribe(rest.Resource):
         args = makeSubscribeParser().parse_args()
         try:
             # Find predictions stored in DB ans make sure they're valid
-            qr = mongo.db.predictions.find_one({'id': args.predictions_id})
-            if qr is None:
+            predictions = db_helper.get_predictions_by_id(args.predictions_id)
+            if predictions is None:
                 return flask.jsonify(
                     {
                         'status': '500',
                         'error': 'No predictions with id {} '.format(args.predictions_id)
                     }
                 )
-            encoder = MongoEncoder()
-            predictions = json.loads(encoder.encode(qr))
+
             if predictions['is_valid'] is False:
                 return flask.jsonify(
                     {
@@ -66,13 +66,13 @@ class Subscribe(rest.Resource):
             doc = {
                 'id': sub_id,
                 'url': args.url,
-                'predictions': predictions['values'],
+                'predictions': predictions,
                 'thresholds': float_thresholds,
                 'registered_at': utils.utcnow(),
-                'notified_at': None
+                'notified_at': []
             }
+
             inserted = mongo.db.subscribers.insert_one(doc)
-            encoder = MongoEncoder()
             if inserted.inserted_id:
                 in_db = db_helper.get_subscriber_by_id(sub_id)
                 return flask.jsonify(
@@ -104,16 +104,27 @@ class TestSubscribe(rest.Resource):
 
         predictions = subscriber['predictions']
         thresholds = subscriber['thresholds']
+        notified_at = subscriber['notified_at'] or []
         url = subscriber['url']
 
         mock = []
-        for p, t in zip(predictions, thresholds):
-            print >> sys.stderr, type(p), type(t)
-            mock.append(p + (t * random.choice([1, 0])) + (random.random() * p))
+        ts = datetime.datetime.strptime(predictions['start_time'], '%Y-%m-%dT%H:%M:%SZ')
+        print >> sys.stderr, ts, type(ts)
+        for p, t in zip(predictions['values'], thresholds):
+            mock.append(
+                {
+                    'timestamp': ts.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                    'value': p + (t * random.choice([1, 0])) + (random.random() * p)
+                }
+            )
+            ts += datetime.timedelta(hours=1)
 
         response = {
             'id': utils.generate_uuid(),
-            'values': mock
+            'values': mock,
+            'start_time': predictions['start_time'],
+            'end_time': predictions['end_time']
+
         }
 
         try:
@@ -132,9 +143,13 @@ class TestSubscribe(rest.Resource):
             mock_resonse = {
                 'url': url,
                 'json': response,
-                'status': 'Success',
+                'message': 'Attempted',
                 'result': result.text
             }
+            mongo.db.subscribers.update_one(
+                {'id': id},
+                {'$set': {'notified_at': notified_at + [utils.utcnow()]}}
+            )
         return flask.jsonify(mock_resonse)
 
 
