@@ -72,8 +72,8 @@ class ActivateModel(rest.Resource):
     def post(self, model_id):
         try:
             # Check model_id is valid
-            found = mongo.db.models.find_one({'id': model_id})
-            if found is None:
+            model = db_helper.get_model_by_id(model_id)
+            if model is None:
                 return flask.jsonify(
                     {
                         'status': '500',
