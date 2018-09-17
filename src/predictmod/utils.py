@@ -22,7 +22,8 @@ class MongoEncoder(json.JSONEncoder):
         if isinstance(value, DBRef):
             return value.id
         if isinstance(value, datetime.datetime):
-            return value.isoformat()
+            # Append a Z to the parsed datetime
+            return value.isoformat() + 'Z'
         if isinstance(value, datetime.date):
             return value.strftime("%Y-%m-%d")
         if isinstance(value, decimal.Decimal):
