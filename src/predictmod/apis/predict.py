@@ -66,9 +66,7 @@ class Predict(rest.Resource):
                     ret.append({'timestamp': t.strftime('%Y-%m-%dT%H:%M:%SZ'), 'requests': p})
                     t += datetime.timedelta(hours=1)
 
-                pid = utils.generate_uuid()
                 to_save = {
-                    'id': pid,
                     'start_time': start_time,
                     'end_time': end_time,
                     'values': arr,
@@ -81,7 +79,7 @@ class Predict(rest.Resource):
                 if inserted.inserted_id:
                     return flask.jsonify(
                         {
-                            'id': pid,
+                            'id': str(inserted.inserted_id),
                             'values': ret,
                             'start_time': start_time.strftime('%Y-%m-%dT%H:%M:%SZ'),
                             'end_time': end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
