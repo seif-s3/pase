@@ -47,6 +47,9 @@
                   <th>
                     Download
                   </th>
+                  <th>
+                    Delete
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -62,7 +65,14 @@
                       <span class="label label-primary">{{ file.mime }}</span>
                     </td>
                     <td>
-                      <a href="download/{{ file.fullname|urlencode }}" class="label label-success"><i class="fa fa-download"></i> Download</a>
+                      <a href="download/{{ file.fullname|urlencode }}">
+                        <i class="material-icons btn-glyphicon img-circle text-info">cloud_download</i>
+                      </a>
+                    </td>
+                    <td>
+                      <a href="delete/{{ file.fullname|urlencode }}">
+                        <i class="material-icons btn-glyphicon img-circle text-danger">delete_forever</i>
+                      </a>
                     </td>
                 </tr>
                 {% endfor %}
