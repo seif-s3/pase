@@ -1,0 +1,17 @@
+table {
+  table-layout:fixed;
+  max-width: 100%;
+}
+
+td {
+  overflow: auto;
+  white-space: nowrap
+}
+
+.card-block.white {
+  color: white;
+}
+
+.card-block.white a, .card-block.white a:link, .card-block.white a:visited, .card-block.white a:active, .card-block.white a:focus {
+  color: white;
+}
