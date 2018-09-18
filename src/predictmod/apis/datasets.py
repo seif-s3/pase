@@ -2,7 +2,8 @@ import os
 import sys
 import flask_restful as rest
 import csv
-from flask import jsonify, request, render_template, make_response, flash, redirect
+import urllib
+from flask import jsonify, request, render_template, make_response, flash, redirect, send_file
 from werkzeug.utils import secure_filename
 from predictmod.app import app, api
 from predictmod import utils
@@ -95,4 +96,17 @@ class Upload(rest.Resource):
         return make_response(template, 200, headers)
 
 
+class Download(rest.Resource):
+
+    def get(self, filename):
+        filename = urllib.unquote(filename)
+        base_directory = app.config['UPLOAD_FOLDER']
+        if os.path.isfile(filename):
+            if os.path.dirname(filename) == base_directory.rstrip("/"):
+                return send_file(filename, as_attachment=True)
+        else:
+            return {'error': "File not found!"}
+        return None
+
 api.add_resource(Upload, '/datasets')
+api.add_resource(Download, '/download/<filename>')
