@@ -69,6 +69,9 @@ class Upload(rest.Resource):
                 overwritten = True
 
             try:
+                # We need to seek to the beginning of the file to save since reading it moved
+                # the pointer ot the last byte and thus saving would save an empty file
+                file.stream.seek(0)
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 # Get datasets after saving file
                 datasets = utils.get_datasets()
