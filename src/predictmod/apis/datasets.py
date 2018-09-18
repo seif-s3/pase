@@ -2,7 +2,7 @@ import os
 import sys
 import flask_restful as rest
 import csv
-from flask import jsonify, request, make_response
+from flask import jsonify, request, render_template, make_response
 from werkzeug.utils import secure_filename
 from predictmod.app import app, api
 from predictmod import utils
@@ -93,12 +93,9 @@ class Upload(rest.Resource):
             )
 
     def get(self):
+        template = render_template('index.html', files=utils.get_datasets(), headers='')
         headers = {'Content-Type': 'text/html'}
-        return make_response('''<h1>Upload new Dataset</h1>\
-        <form method=post enctype=multipart/form-data>\
-        <input type=file name=file>\
-        <input type=submit value=Upload>\
-        </form>''', 200, headers)
+        return make_response(template, 200, headers)
 
 
-api.add_resource(Upload, '/upload')
+api.add_resource(Upload, '/datasets')

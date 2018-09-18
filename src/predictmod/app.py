@@ -37,5 +37,5 @@ def healthcheck():
 
 import apis.predict
 import apis.models
-import apis.upload
+import apis.datasets
 import apis.subscribe
