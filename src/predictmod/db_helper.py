@@ -1,4 +1,5 @@
 import json
+from bson.objectid import ObjectId
 from predictmod.app import mongo
 from predictmod.utils import MongoEncoder
 
@@ -15,18 +16,21 @@ def get_active_model():
 
 
 def get_model_by_id(model_id):
-    query_result = mongo.db.models.find_one({'id': model_id})
+    # Returns a Model as a JSON doc
+    query_result = mongo.db.models.find_one({'_id': ObjectId(model_id)})
     encoder = MongoEncoder()
     return json.loads(encoder.encode(query_result))
 
 
 def get_subscriber_by_id(sub_id):
-    query_result = mongo.db.subscribers.find_one({'id': sub_id})
+    # Returns a Subscriber as a JSON doc
+    query_result = mongo.db.subscribers.find_one({'_id': ObjectId(sub_id)})
     encoder = MongoEncoder()
     return json.loads(encoder.encode(query_result))
 
 
 def get_predictions_by_id(pred_id):
-    query_result = mongo.db.predictions.find_one({'id': pred_id})
+    # Returns a Prediction as a JSON doc
+    query_result = mongo.db.predictions.find_one({'_id': ObjectId(pred_id)})
     encoder = MongoEncoder()
     return json.loads(encoder.encode(query_result))

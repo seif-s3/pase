@@ -75,10 +75,8 @@ class ArimaModel(object):
     def save_model(self, dataset):
         # Make sure we have a saved model
         if self.model_fit:
-            model_id = utils.generate_uuid()
             # Write model to MongoDB
             mongo_doc = {
-                'id': model_id,     # Model ID used to fetch from the trained_models directory
                 'algorithm': 'ARIMA',
                 'input_type': 'csv',    # Whether this model was trained from a batch CSV or Influx
                 'input_start': self.data_clean.index.min(),   # Starting timestamp of training data
@@ -91,7 +89,8 @@ class ArimaModel(object):
                     'dataset': dataset
                 }
             }
-            mongo.db.models.insert_one(mongo_doc)
+            inserted = mongo.db.models.insert_one(mongo_doc)
+            model_id = inserted.inserted_id
             self.model_fit.save('/trained_models/{}.pkl'.format(model_id))
             return model_id
 
