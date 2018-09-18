@@ -108,5 +108,21 @@ class Download(rest.Resource):
             return {'error': "File not found!"}
         return None
 
+
+class Delete(rest.Resource):
+
+    def get(self, filename):
+        filename = urllib.unquote(filename)
+        base_directory = app.config['UPLOAD_FOLDER']
+        if os.path.isfile(filename):
+            if os.path.dirname(filename) == base_directory.rstrip("/"):
+                os.remove(filename)
+                flash('Dataset Deleted!')
+                return redirect('/datasets')
+        else:
+            return {'error': "File not found!"}
+        return None
+
 api.add_resource(Upload, '/datasets')
 api.add_resource(Download, '/download/<filename>')
+api.add_resource(Delete, '/delete/<filename>')
