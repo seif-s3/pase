@@ -2,7 +2,7 @@ import os
 import sys
 import flask_restful as rest
 import csv
-from flask import jsonify, request, render_template, make_response
+from flask import jsonify, request, render_template, make_response, flash, redirect
 from werkzeug.utils import secure_filename
 from predictmod.app import app, api
 from predictmod import utils
@@ -24,17 +24,17 @@ def validate_csv(file):
         reader = csv.DictReader(file)
         if len(reader.fieldnames) != 2:
             print >> sys.stderr, "Invalid fieldnames: {}".format(reader.fieldnames)
-            return False, "Invalid fieldnames: {}".format(reader.fieldnames)
+            return False, "Error: Invalid fieldnames: {}".format(reader.fieldnames)
 
         if "timestamp" not in reader.fieldnames and "value" not in reader.fieldnames:
             print >> sys.stderr, "Missing header. CSV should have 2 columns: timestamp, value"
-            return False, "Missing header. CSV should have 2 columns: timestamp, value"
+            return False, "Error: Missing header. CSV should have 2 columns: timestamp, value"
         ln = 1
         for l in reader:
             ln += 1
             if len(l) != 2:
                 print >> sys.stderr, "Encountered Bad line {}".format(ln)
-                return False, "Encountered Bad line {}".format(ln)
+                return False, "Error: Encountered Bad line {}".format(ln)
         return True, None
     except Exception as e:
         print >> sys.stderr, e.message
@@ -73,27 +73,21 @@ class Upload(rest.Resource):
                 # the pointer ot the last byte and thus saving would save an empty file
                 file.stream.seek(0)
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                # Get datasets after saving file
-                datasets = utils.get_datasets()
-                return jsonify(
-                    {
-                        'uploaded': True,
-                        'overwritten': overwritten,
-                        'datasets': datasets
-                    }
-                )
+
+                flash_msg = "Your file was uploaded! "
+                if overwritten:
+                    flash_msg += "Note that an older dataset was overwritten by this operation."
+
+                flash(flash_msg)
+                return redirect('/datasets')
+
             except:
-                return jsonify(
-                    {
-                        'error': 'Failed to save file'
-                    }
-                )
+                flash('Error: Failed to save file!')
+                return redirect('/datasets')
+
         else:
-            return jsonify(
-                {
-                    'error': error_msg
-                }
-            )
+            flash(error_msg)
+            return redirect('/datasets')
 
     def get(self):
         template = render_template('index.html', files=utils.get_datasets(), headers='')
