@@ -62,9 +62,7 @@ class Subscribe(rest.Resource):
                 float_thresholds.append(float(t))
 
             # Save subscriber
-            sub_id = utils.generate_uuid()
             doc = {
-                'id': sub_id,
                 'url': args.url,
                 'predictions': predictions,
                 'thresholds': float_thresholds,
@@ -74,11 +72,10 @@ class Subscribe(rest.Resource):
 
             inserted = mongo.db.subscribers.insert_one(doc)
             if inserted.inserted_id:
-                in_db = db_helper.get_subscriber_by_id(sub_id)
                 return flask.jsonify(
                     {
                         'registered': True,
-                        'id': in_db['id']
+                        'id': str(inserted.inserted_id)
                     }
                 )
 
@@ -120,7 +117,7 @@ class TestSubscribe(rest.Resource):
             ts += datetime.timedelta(hours=1)
 
         response = {
-            'id': utils.generate_uuid(),
+            'id': 'newMockId',
             'values': mock,
             'start_time': predictions['start_time'],
             'end_time': predictions['end_time']
