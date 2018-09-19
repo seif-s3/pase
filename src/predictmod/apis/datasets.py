@@ -2,7 +2,8 @@ import os
 import sys
 import flask_restful as rest
 import csv
-from flask import jsonify, request, make_response
+import urllib
+from flask import jsonify, request, render_template, make_response, flash, redirect, send_file
 from werkzeug.utils import secure_filename
 from predictmod.app import app, api
 from predictmod import utils
@@ -24,17 +25,17 @@ def validate_csv(file):
         reader = csv.DictReader(file)
         if len(reader.fieldnames) != 2:
             print >> sys.stderr, "Invalid fieldnames: {}".format(reader.fieldnames)
-            return False, "Invalid fieldnames: {}".format(reader.fieldnames)
+            return False, "Error: Invalid fieldnames: {}".format(reader.fieldnames)
 
         if "timestamp" not in reader.fieldnames and "value" not in reader.fieldnames:
             print >> sys.stderr, "Missing header. CSV should have 2 columns: timestamp, value"
-            return False, "Missing header. CSV should have 2 columns: timestamp, value"
+            return False, "Error: Missing header. CSV should have 2 columns: timestamp, value"
         ln = 1
         for l in reader:
             ln += 1
             if len(l) != 2:
                 print >> sys.stderr, "Encountered Bad line {}".format(ln)
-                return False, "Encountered Bad line {}".format(ln)
+                return False, "Error: Encountered Bad line {}".format(ln)
         return True, None
     except Exception as e:
         print >> sys.stderr, e.message
@@ -69,36 +70,59 @@ class Upload(rest.Resource):
                 overwritten = True
 
             try:
+                # We need to seek to the beginning of the file to save since reading it moved
+                # the pointer ot the last byte and thus saving would save an empty file
+                file.stream.seek(0)
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                # Get datasets after saving file
-                datasets = utils.get_datasets()
-                return jsonify(
-                    {
-                        'uploaded': True,
-                        'overwritten': overwritten,
-                        'datasets': datasets
-                    }
-                )
+
+                flash_msg = "Your file was uploaded! "
+                if overwritten:
+                    flash_msg += "Note that an older dataset was overwritten by this operation."
+
+                flash(flash_msg)
+                return redirect('/datasets')
+
             except:
-                return jsonify(
-                    {
-                        'error': 'Failed to save file'
-                    }
-                )
+                flash('Error: Failed to save file!')
+                return redirect('/datasets')
+
         else:
-            return jsonify(
-                {
-                    'error': error_msg
-                }
-            )
+            flash(error_msg)
+            return redirect('/datasets')
 
     def get(self):
+        template = render_template('index.html', files=utils.get_datasets(), headers='')
         headers = {'Content-Type': 'text/html'}
-        return make_response('''<h1>Upload new Dataset</h1>\
-        <form method=post enctype=multipart/form-data>\
-        <input type=file name=file>\
-        <input type=submit value=Upload>\
-        </form>''', 200, headers)
+        return make_response(template, 200, headers)
 
 
-api.add_resource(Upload, '/upload')
+class Download(rest.Resource):
+
+    def get(self, filename):
+        filename = urllib.unquote(filename)
+        base_directory = app.config['UPLOAD_FOLDER']
+        if os.path.isfile(filename):
+            if os.path.dirname(filename) == base_directory.rstrip("/"):
+                return send_file(filename, as_attachment=True)
+        else:
+            return {'error': "File not found!"}
+        return None
+
+
+class Delete(rest.Resource):
+
+    def get(self, filename):
+        filename = urllib.unquote(filename)
+        base_directory = app.config['UPLOAD_FOLDER']
+        if os.path.isfile(filename):
+            if os.path.dirname(filename) == base_directory.rstrip("/"):
+                os.remove(filename)
+                flash('Dataset Deleted!')
+                return redirect('/datasets')
+        else:
+            return {'error': "File not found!"}
+        return None
+
+api.add_resource(Upload, '/datasets')
+api.add_resource(Download, '/download/<filename>')
+api.add_resource(Delete, '/delete/<filename>')

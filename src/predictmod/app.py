@@ -7,6 +7,7 @@ from flask_cors import CORS
 
 
 app = flask.Flask('predictmod')
+app.secret_key = os.urandom(16)
 
 CORS(app, origins=[r'.*localhost:5000$',
                    r'.*localhost:9999$'])
@@ -37,5 +38,5 @@ def healthcheck():
 
 import apis.predict
 import apis.models
-import apis.upload
+import apis.datasets
 import apis.subscribe

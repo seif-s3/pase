@@ -6,7 +6,9 @@ import matplotlib as plt
 import datetime
 import decimal
 import uuid
-from os import listdir
+import os
+import magic
+import urllib
 from os.path import isfile, join
 from bson.dbref import DBRef
 from bson.objectid import ObjectId
@@ -43,10 +45,31 @@ def add_timestamps(data, output, start_at, delta='1 week'):
 
 
 def get_datasets():
-    return [
-        f for f in listdir(
-            app.config['UPLOAD_FOLDER']) if isfile(join(app.config['UPLOAD_FOLDER'], f))
-    ]
+    mime = magic.Magic(mime=True)
+    files = []
+    base_directory = app.config['UPLOAD_FOLDER']
+    for (dirpath, dirnames, filenames) in os.walk(base_directory):
+        for name in filenames:
+            nm = os.path.join(dirpath, name).replace(base_directory, "").strip("/").split("/")
+            fullpath = os.path.join(dirpath, name)
+
+            if os.path.isfile(fullpath) is False:
+                continue
+
+            size = os.stat(fullpath).st_size
+            if len(nm) == 1:
+                name_s = name.split(".")
+                # Ignore dotfiles
+                if name_s[0] == "" or name_s[0] is None:
+                    continue
+
+            files.append({
+                "name": name,
+                "size": str(size) + " B",
+                "mime": mime.from_file(fullpath),
+                "fullname": urllib.quote_plus(fullpath)
+            })
+    return files
 
 
 def get_series(data, index):
