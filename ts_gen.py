@@ -52,7 +52,7 @@ def main():
     t = start
     print("timestamp,value")
     for s in samples:
-        print("{},{}".format(t, s))
+        print("{},{}".format(t.strftime('%Y-%m-%dT%H:%M:%SZ'), s))
         t += timedelta(hours=1)
 
 
