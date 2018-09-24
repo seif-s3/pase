@@ -41,7 +41,19 @@ def car(steps, min, max):
     regular_time_samples = time_sampler.sample_regular_time(num_points=steps)
     samples, signals, errors = car_series.sample(regular_time_samples)
     ret = []
+    interpolator = interp1d([samples.min(), samples.max()], [min, max])
+    for s in samples:
+        ret.append(int(interpolator(s)))
+    return ret
 
+
+def gaussian(steps, min, max):
+    gp = ts.signals.GaussianProcess(kernel='Matern', nu=3.0/2)
+    gp_series = ts.TimeSeries(signal_generator=gp)
+    time_sampler = ts.TimeSampler(stop_time=steps)
+    regular_time_samples = time_sampler.sample_regular_time(num_points=steps)
+    samples = gp_series.sample(regular_time_samples)[0]
+    ret = []
     interpolator = interp1d([samples.min(), samples.max()], [min, max])
     for s in samples:
         ret.append(int(interpolator(s)))
@@ -63,9 +75,12 @@ def main():
     if args.func == 'ar':
         samples = ar(args.steps, args.min, args.max)
     elif args.func == 'car':
-        samples = ar(args.steps, args.min, args.max)
+        samples = car(args.steps, args.min, args.max)
+    elif args.func == 'gaussian':
+        samples = gaussian(args.steps, args.min, args.max)
     else:
-        print("Unknown algorithm. Choices are [ar, car]")
+        print("Unknown algorithm. Choices are [ar, car, gaussian]")
+        return
 
     t = start
     print("timestamp,value")
