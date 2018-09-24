@@ -34,6 +34,20 @@ def ar(steps, min, max):
     return ret
 
 
+def car(steps, min, max):
+    car = ts.signals.CAR(ar_param=0.9, sigma=0.01)
+    car_series = ts.TimeSeries(signal_generator=car)
+    time_sampler = ts.TimeSampler(stop_time=steps)
+    regular_time_samples = time_sampler.sample_regular_time(num_points=steps)
+    samples, signals, errors = car_series.sample(regular_time_samples)
+    ret = []
+
+    interpolator = interp1d([samples.min(), samples.max()], [min, max])
+    for s in samples:
+        ret.append(int(interpolator(s)))
+    return ret
+
+
 def main():
     args = makeParser()
     try:
@@ -48,6 +62,10 @@ def main():
 
     if args.func == 'ar':
         samples = ar(args.steps, args.min, args.max)
+    elif args.func == 'car':
+        samples = ar(args.steps, args.min, args.max)
+    else:
+        print("Unknown algorithm. Choices are [ar, car]")
 
     t = start
     print("timestamp,value")
