@@ -12,6 +12,8 @@ def makeTrainModelOnCsvParser(for_update=False):
     parser = reqparse.RequestParser(trim=True)
     parser.add_argument('algorithm', required=True, nullable=False)
     parser.add_argument('dataset', required=True, nullable=False)
+    parser.add_argument('train', nullable=False, type=float)
+    parser.add_argument('test', nullable=False, type=float)
     return parser
 
 
