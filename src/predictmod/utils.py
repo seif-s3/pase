@@ -84,6 +84,14 @@ def load_instana_data():
     return data
 
 
+def load_dataset(dataset):
+    def date_parser(dates):
+        return pd.datetime.strptime(dates, '%Y-%m-%dT%H:%M:%SZ')
+    data = pd.read_csv('/datasets/{}'.format(dataset),
+                       parse_dates=['timestamp'], index_col='timestamp', date_parser=date_parser)
+    return data
+
+
 def plot_week(data, start_day):
     start = datetime.strptime(start_day, '%Y-%m-%d')
     end = start + datetime.timedelta(days=7)
