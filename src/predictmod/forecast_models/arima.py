@@ -20,20 +20,22 @@ class ArimaModel(object):
         # Preprocessing
         self.data_clean = self.data.copy()
         self.data_clean[self.data_clean == -1] = np.nan
-
+        # Replace NaNs with Mean
         self.data_clean[np.isnan(self.data_clean)] = np.nanmean(self.data_clean)
 
-    def __init__(self, load_id=None, dataset=None):
+    def __init__(self, load_id=None, dataset=None, train=0.7, test=0.3):
         # TODO: If we are instantiating a new model, train it from the CSV
         # TODO: Parametarize csv file
         if load_id is None and dataset:
             # Instana data has a special format so it will be parsed differently
-            if dataset == 'instana.csv':
+            if dataset == 'instana-with-timestamps.csv':
                 self._instata()
                 self._train_test_split(505, 168)
             else:
                 # TODO: Add logic for general CSVs here
-                pass
+                self.data_clean = utils.load_dataset(dataset)
+                self._train_test_split(
+                    int(len(self.data_clean) * train), int(len(self.data_clean) * test))
         else:
             self.load_model(load_id)
 

@@ -3,7 +3,7 @@ from flask_restful import reqparse
 import flask_restful as rest
 import flask
 import json
-from predictmod.utils import MongoEncoder
+from predictmod.utils import MongoEncoder, get_datasets
 from predictmod import db_helper
 from predictmod.forecast_models import arima
 
@@ -12,6 +12,8 @@ def makeTrainModelOnCsvParser(for_update=False):
     parser = reqparse.RequestParser(trim=True)
     parser.add_argument('algorithm', required=True, nullable=False)
     parser.add_argument('dataset', required=True, nullable=False)
+    parser.add_argument('train', nullable=False, type=float)
+    parser.add_argument('test', nullable=False, type=float)
     return parser
 
 
@@ -105,11 +107,20 @@ class TrainModelOnCsv(rest.Resource):
 
     def post(self):
         args = makeTrainModelOnCsvParser().parse_args()
+        dataset_names = [f['name'] for f in get_datasets()]
+
+        if not args.dataset or args.dataset not in dataset_names:
+            return flask.jsonify(
+                {
+                    'status': '500',
+                    'error': 'No such dataset'
+                }
+            )
         if args.algorithm == 'ARIMA':
             """Train model from instana data."""
-            model = arima.ArimaModel(load_id=None, dataset='instana.csv')
+            model = arima.ArimaModel(load_id=None, dataset=args.dataset)
             test, predictions = model.train_model_on_batch(model.training_data, model.testing_data)
-            model_id = model.save_model('instana.csv')
+            model_id = model.save_model(args.dataset)
             return flask.jsonify(db_helper.get_model_by_id(model_id))
 
 
