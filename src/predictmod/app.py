@@ -1,9 +1,18 @@
+import atexit
 import os
 import datetime
 import flask
+import sys
 from flask_pymongo import PyMongo
 from flask_restful import Api
 from flask_cors import CORS
+from apscheduler.schedulers.background import BackgroundScheduler
+from threading import Thread
+
+
+scheduler = BackgroundScheduler(coalesce=True, timezone='utc')
+scheduler.start()
+atexit.register(lambda: scheduler.shutdown())
 
 
 app = flask.Flask('predictmod')
@@ -24,6 +33,14 @@ app.config['MONGO_URI'] = os.environ.get(
 mongo = PyMongo(app)
 
 api = Api(app, catch_all_404s=True)
+
+
+@scheduler.scheduled_job('interval', seconds=10)
+def test_job():
+    try:
+        print >> sys.stderr, "Test Job Triggered!!", datetime.datetime.now()
+    except Exception as e:
+        pass
 
 
 @app.route('/')
