@@ -23,6 +23,14 @@ def get_model_by_id(model_id):
     return json.loads(encoder.encode(query_result))
 
 
+def get_all_subscribers(sub_id):
+    # Returns a Subscriber as a JSON doc
+    query_result = mongo.db.subscribers.find()
+    encoder = MongoEncoder()
+    docs = [json.loads(encoder.encode(doc)) for doc in query_result]
+    return docs
+
+
 def get_subscriber_by_id(sub_id):
     # Returns a Subscriber as a JSON doc
     query_result = mongo.db.subscribers.find_one({'_id': ObjectId(sub_id)})
