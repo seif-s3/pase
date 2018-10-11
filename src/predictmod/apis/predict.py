@@ -31,7 +31,7 @@ class Predict(rest.Resource):
             active_model = db_helper.get_active_model()
             print >> sys.stderr, "Active Model: {}".format(active_model)
             if active_model:
-                model = ArimaModel(load_id=active_model)
+                model = ArimaModel(load=True, model_id=active_model)
                 model_attributes = db_helper.get_model_by_id(active_model)
 
                 # K is the number of units (typically hours) we need to forecast

@@ -133,8 +133,8 @@ class TrainModelOnCsv(rest.Resource):
             )
         if args.algorithm == 'ARIMA':
             """Train model from instana data."""
-            model = arima.ArimaModel(load_id=None, dataset=args.dataset)
-            test, predictions = model.train_model_on_batch(model.training_data, model.testing_data)
+            model = arima.ArimaModel(dataset=args.dataset)
+            test, predictions = model.train_model(model.training_data, model.testing_data)
             model_id = model.save_model(args.dataset)
             return flask.jsonify(db_helper.get_model_by_id(model_id))
 
