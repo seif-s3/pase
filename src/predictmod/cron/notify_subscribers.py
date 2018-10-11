@@ -47,12 +47,18 @@ def job():
             start_time = datetime.datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%SZ')
             end_time = datetime.datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%SZ')
 
-            predictions = model.forecast(K)
+            forecasted = model.forecast(K)
             # Discard first S predictions since they are not required in the response
-            new_predictions = predictions[S:]
+            new_predictions = forecasted[S:]
 
-            print >> sys.stderr, "Old predictions", old_predictions
-            print >> sys.stderr, "New predictions", new_predictions
+            # Prepare JSON to be sent in case difference is significant
+            new_json = []
+            new_values = []
+            t = start_time
+            for p in new_predictions:
+                new_values.append(p)
+                new_json.append({'timestamp': t.strftime('%Y-%m-%dT%H:%M:%SZ'), 'requests': p})
+                t += datetime.timedelta(hours=1)
 
             distance = math.sqrt(
                 sum(
@@ -60,7 +66,43 @@ def job():
                 )
             )
             print >> sys.stderr, "Difference in predictions: ", distance
-            # TODO: Add logic for notifying here
+            # TODO: Change threshold value!!
+            if distance >= 10:
+                # Invalidate old predictions
+                db_helper.invalidate_predictions(predictions['_id'])
+                # Save new predictions:
+                to_save = {
+                    'start_time': start_time,
+                    'end_time': end_time,
+                    'values': new_values,
+                    'granularity': 'hour',
+                    'is_valid': True,
+                    'generated_at': utils.utcnow(),
+                    'model': active_model
+                }
+
+                new_predictions_id = db_helper.save_predictions(to_save)
+                response = {
+                    'id': new_predictions_id,
+                    'values': new_json,
+                    'start_time': start_time.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                    'end_time': end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+                }
+                # Notify subscriber
+                try:
+                    fail = False
+                    result = requests.post(notify_url, json=response)
+                except Exception as e:
+                    fail = True
+                    result = 'Error sending POST request to {}: {}'.format(notify_url, e.message)
+
+                print >> sys.stderr, "Notified {}".format(notify_url)
+                print >> sys.stderr, "Result {}".format(result)
+
+                if not fail:
+                    # Update subscriber
+                    db_helper.update_subscriber_predictions(s, new_predictions_id)
 
         else:
             print >> sys.stderr, """
