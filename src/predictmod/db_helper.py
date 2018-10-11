@@ -45,6 +45,18 @@ def get_predictions_by_id(pred_id):
     return json.loads(encoder.encode(query_result))
 
 
+def invalidate_predictions(pred_id):
+    # Returns a Prediction as a JSON doc
+    query_result = mongo.db.predictions.find_one_and_update(
+        {'_id': ObjectId(pred_id)},
+        {
+            '$set': {"is_valid": False, "invalidated_at": utcnow()}
+        }
+    )
+    encoder = MongoEncoder()
+    return json.loads(encoder.encode(query_result))
+
+
 def update_model_input(model_id, input_end):
     query_result = mongo.db.models.find_one_and_update(
         {'_id': ObjectId(model_id)},
