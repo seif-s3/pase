@@ -23,7 +23,7 @@ def get_model_by_id(model_id):
     return json.loads(encoder.encode(query_result))
 
 
-def get_all_subscribers(sub_id):
+def get_all_subscribers():
     # Returns a Subscriber as a JSON doc
     query_result = mongo.db.subscribers.find()
     encoder = MongoEncoder()
