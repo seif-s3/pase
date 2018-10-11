@@ -108,3 +108,6 @@ notebooks/
 
 # exclude trained models
 trained_models/*.pkl
+
+# exclude influxdb augmented datasets
+datasets/influx/*.csv
