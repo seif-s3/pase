@@ -1,5 +1,6 @@
 """
-Scheduled job that updates the current active_model.
+Scheduled job that retrains the current active_model if new data is fetched from InfluxDB.
+
 This job will connect to the InfluxDB specified in the app config to fetch all readings after the
 models training endtime.
 Additionally, moedl will be retrained using more data and updated accordingly.
