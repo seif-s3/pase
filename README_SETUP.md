@@ -19,7 +19,7 @@ This could take time but eventually you should get this reponse
     "algorithm": "ARIMA",
     "input_end": "2018-01-29T00:00:00",
     "input_start": "2018-01-01T01:00:00",
-    "input_type": "csv",
+    "input_source": "csv",
     "metadata": {
         "d": 1,
         "dataset": "instana.csv",

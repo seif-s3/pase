@@ -45,8 +45,7 @@ def update_model_input(model_id, input_end):
                 {
                     "input_end": pd.datetime.strptime(input_end, '%Y-%m-%dT%H:%M:%SZ'),
                     "acquisition_time": utcnow(),
-                    "metadata.dataset": "{}.csv".format(model_id),
-                    "input_type": "influx"
+                    "input_source": "influx"
                 }
         }
     )

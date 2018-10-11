@@ -80,7 +80,7 @@ class ArimaModel(object):
             # Write model to MongoDB
             mongo_doc = {
                 'algorithm': 'ARIMA',
-                'input_type': 'csv',    # Whether this model was trained from a batch CSV or Influx
+                'input_source': 'csv',    # Whether this model is trained from a batch CSV or Influx
                 'input_start': self.data_clean.index.min(),   # Starting timestamp of training data
                 'input_end': self.data_clean.index.max(),   # Ending timestamp of training data
                 'acquisition_time': utils.utcnow(),

@@ -93,7 +93,7 @@ class ActivateModel(rest.Resource):
                 # be augmented with future data that is scraped automatically.
                 model_attributes = db_helper.get_model_by_id(model_id)
                 dataset = model_attributes['metadata']['dataset']
-                if model_attributes['input_type'] == 'csv':
+                if model_attributes['input_source'] == 'csv':
                     # If model was trained using a csv file
                     import sys
                     print >> sys.stderr, "Copying:", dataset, "to", '/model_inputs/{}.csv'.format(
