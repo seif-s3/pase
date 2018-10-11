@@ -1,8 +1,8 @@
 # Initialize Service:
 
 1- `docker-compose up`
-2- Go to `http://localhost:9090/models`. It should give you an empty list
-3- Using Postman hit `http://localhost:9090/train_model_csv` with the following payload:
+2- Go to `http://localhost:8888/models`. It should give you an empty list
+3- Using Postman hit `http://localhost:8888/train_model_csv` with the following payload:
 
 ```
 {
@@ -29,13 +29,13 @@ This could take time but eventually you should get this reponse
 }
 ```
 
-If you hit the `http://localhost:9090/models` endpoint again, you'll get the same result.
+If you hit the `http://localhost:8888/models` endpoint again, you'll get the same result.
 
-4- Activate the model by sending a post request to `http://localhost:9090/activate_model/<model_id>`
+4- Activate the model by sending a post request to `http://localhost:8888/activate_model/<model_id>`
 
-5- Make sure the model is active by going to `http://localhost:9090/active_model`
+5- Make sure the model is active by going to `http://localhost:8888/active_model`
 
-6- Generate your predictions: GET `http://localhost:9090/predict?start_time=2018-06-25T00:00:00Z&end_time=2018-06-25T06:00:00Z`. The result will look like this: 
+6- Generate your predictions: GET `http://localhost:8888/predict?start_time=2018-06-25T00:00:00Z&end_time=2018-06-25T06:00:00Z`. The result will look like this: 
 
 ```
 {
@@ -75,11 +75,11 @@ If you hit the `http://localhost:9090/models` endpoint again, you'll get the sam
 }
 ```
 
-7- To subscribe to changes in predictions: POST to `http://localhost:9090/subscribe`
+7- To subscribe to changes in predictions: POST to `http://localhost:8888/subscribe`
 
 ```
 {
-	"url": "http://localhost:9090/healthcheck",
+	"url": "http://localhost:8888/healthcheck",
 	"thresholds": [10, 10, 5, 2, 1, 8, 20],
 	"predictions_id": "35ba0b0f6770b06006ad4d550"
 }
@@ -96,5 +96,5 @@ You'll get back a subscriber id like, and `registered: true`
 }
 ```
 
-8- Trigger a test event: GET `http://localhost:9090/test_sub/subsriber_id`
+8- Trigger a test event: GET `http://localhost:8888/test_sub/subsriber_id`
 
