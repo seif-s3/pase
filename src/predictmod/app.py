@@ -1,9 +1,18 @@
+import atexit
 import os
 import datetime
 import flask
+import sys
 from flask_pymongo import PyMongo
 from flask_restful import Api
 from flask_cors import CORS
+from apscheduler.schedulers.background import BackgroundScheduler
+from threading import Thread
+
+
+scheduler = BackgroundScheduler(coalesce=True, timezone='utc')
+scheduler.start()
+atexit.register(lambda: scheduler.shutdown())
 
 
 app = flask.Flask('predictmod')
@@ -24,6 +33,19 @@ app.config['MONGO_URI'] = os.environ.get(
 mongo = PyMongo(app)
 
 api = Api(app, catch_all_404s=True)
+
+
+# 'interval' jobs run after a certain tim
+# 'cron' jobs run at a specified hour/minute
+@scheduler.scheduled_job('interval', minutes=1)
+def update_model():
+    try:
+        print >> sys.stderr, "Triggering update_model job: ", datetime.datetime.now()
+        from predictmod.cron import update_model
+        update_model.job()
+    except Exception as e:
+        print >> sys.stderr, "Exception caught while running job!"
+        print >> sys.stderr, e
 
 
 @app.route('/')

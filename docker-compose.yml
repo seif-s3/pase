@@ -6,8 +6,9 @@ services:
             - ./src:/app/
             - ./datasets:/datasets/
             - ./trained_models:/trained_models/
+            - ./model_inputs:/model_inputs/
         ports:
-            - "9090:80"
+            - "8888:80"
         depends_on:
             - mongodb
 

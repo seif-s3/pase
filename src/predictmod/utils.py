@@ -87,7 +87,7 @@ def load_instana_data():
 def load_dataset(dataset):
     def date_parser(dates):
         return pd.datetime.strptime(dates, '%Y-%m-%dT%H:%M:%SZ')
-    data = pd.read_csv('/datasets/{}'.format(dataset),
+    data = pd.read_csv('{}'.format(dataset),
                        parse_dates=['timestamp'], index_col='timestamp', date_parser=date_parser)
     return data
 

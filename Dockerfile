@@ -7,6 +7,7 @@ RUN apt-get install -y python-pip python-dev build-essential
 
 COPY ./requirements.txt /app/
 COPY ./datasets /datasets
+COPY ./model_inputs /model_inputs
 COPY ./src /app
 COPY ./trained_models /trained_models
 WORKDIR /app

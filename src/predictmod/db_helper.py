@@ -1,7 +1,8 @@
 import json
+import pandas as pd
 from bson.objectid import ObjectId
 from predictmod.app import mongo
-from predictmod.utils import MongoEncoder
+from predictmod.utils import MongoEncoder, utcnow
 
 
 def get_active_model():
@@ -34,3 +35,20 @@ def get_predictions_by_id(pred_id):
     query_result = mongo.db.predictions.find_one({'_id': ObjectId(pred_id)})
     encoder = MongoEncoder()
     return json.loads(encoder.encode(query_result))
+
+
+def update_model_input(model_id, input_end):
+    query_result = mongo.db.models.find_one_and_update(
+        {'_id': ObjectId(model_id)},
+        {
+            "$set":
+                {
+                    "input_end": pd.datetime.strptime(input_end, '%Y-%m-%dT%H:%M:%SZ'),
+                    "acquisition_time": utcnow(),
+                    "input_source": "influx"
+                }
+        }
+    )
+    if query_result:
+        return True
+    return False
