@@ -3,6 +3,7 @@ from flask_restful import reqparse
 import flask_restful as rest
 import flask
 import json
+import shutil
 from predictmod.utils import MongoEncoder, get_datasets
 from predictmod import db_helper
 from predictmod.forecast_models import arima
@@ -88,6 +89,20 @@ class ActivateModel(rest.Resource):
             inserted = mongo.db.active_model.insert_one({'model_id': model_id})
             encoder = MongoEncoder()
             if inserted.inserted_id:
+                # When activating a new model, we need to create a copy of the training dataset to
+                # be augmented with future data that is scraped automatically.
+                model_attributes = db_helper.get_model_by_id(model_id)
+                dataset = model_attributes['metadata']['dataset']
+                if model_attributes['input_type'] == 'csv':
+                    # If model was trained using a csv file
+                    import sys
+                    print >> sys.stderr, "Copying:", dataset, "to", 'datasets/influx/{}.csv'.format(
+                        model_id)
+                    shutil.copyfile(
+                        '/datasets/{}'.format(dataset),
+                        '/datasets/influx/{}.csv'.format(model_id)
+                    )
+
                 return flask.jsonify(
                     {
                         'active_model': model_id,
