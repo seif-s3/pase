@@ -35,12 +35,17 @@ mongo = PyMongo(app)
 api = Api(app, catch_all_404s=True)
 
 
-@scheduler.scheduled_job('interval', seconds=10)
-def test_job():
+# 'interval' jobs run after a certain tim
+# 'cron' jobs run at a specified hour/minute
+@scheduler.scheduled_job('interval', minutes=1)
+def update_model():
     try:
-        print >> sys.stderr, "Test Job Triggered!!", datetime.datetime.now()
+        print >> sys.stderr, "Triggering update_model job: ", datetime.datetime.now()
+        from predictmod.cron import update_model
+        update_model.job()
     except Exception as e:
-        pass
+        print >> sys.stderr, "Exception caught while running job!"
+        print >> sys.stderr, e
 
 
 @app.route('/')
