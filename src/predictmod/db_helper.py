@@ -38,6 +38,21 @@ def get_subscriber_by_id(sub_id):
     return json.loads(encoder.encode(query_result))
 
 
+def update_subscriber_predictions(sub_id, pred_id):
+    query_result = mongo.db.subscribers.find_one_and_update(
+        {'_id': ObjectId(sub_id)},
+        {
+            "$set":
+                {
+                    "predictions": get_predictions_by_id(pred_id)
+                }
+        }
+    )
+    if query_result:
+        return True
+    return False
+
+
 def get_predictions_by_id(pred_id):
     # Returns a Prediction as a JSON doc
     query_result = mongo.db.predictions.find_one({'_id': ObjectId(pred_id)})
