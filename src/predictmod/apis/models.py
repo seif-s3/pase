@@ -96,11 +96,11 @@ class ActivateModel(rest.Resource):
                 if model_attributes['input_type'] == 'csv':
                     # If model was trained using a csv file
                     import sys
-                    print >> sys.stderr, "Copying:", dataset, "to", 'datasets/influx/{}.csv'.format(
+                    print >> sys.stderr, "Copying:", dataset, "to", '/model_inputs/{}.csv'.format(
                         model_id)
                     shutil.copyfile(
                         '/datasets/{}'.format(dataset),
-                        '/datasets/influx/{}.csv'.format(model_id)
+                        '/model_inputs/{}.csv'.format(model_id)
                     )
 
                 return flask.jsonify(

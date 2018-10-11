@@ -17,10 +17,10 @@ def reformat_influx_series(series):
 
 
 def append_dataset(model_id, new_data):
-    # The /datasets/influx directory will always contain all data used to train a specific model.
+    # The /model_inputs directory will always contain all data used to train a specific model.
     # Everytime we fetch new data from Influx, we append the training data file.
     # Open model file in append mode.
-    f = open('/datasets/influx/{}.csv'.format(model_id), 'a')
+    f = open('/model_inputs/{}.csv'.format(model_id), 'a')
     for point in new_data:
         f.write("{},{}\n".format(point['timestamp'], point['value']))
     f.close()

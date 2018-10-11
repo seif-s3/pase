@@ -110,4 +110,4 @@ notebooks/
 trained_models/*.pkl
 
 # exclude influxdb augmented datasets
-datasets/influx/*.csv
+model_inputs/*.csv
