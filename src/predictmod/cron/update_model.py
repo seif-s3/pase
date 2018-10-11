@@ -29,7 +29,7 @@ def append_dataset(model_id, new_data):
 def job():
     active_model_id = db_helper.get_active_model()
     if not active_model_id:
-        print >> sys.stdout, "Error: No Active model"
+        print >> sys.stderr, "Error: No Active model"
         return
 
     model = db_helper.get_model_by_id(active_model_id)
