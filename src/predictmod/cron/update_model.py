@@ -64,6 +64,7 @@ def job():
             # Save new training data to CSV
             append_dataset(active_model_id, new_data)
             # TODO: Retrain model and update params
+            db_helper.update_model_input(active_model_id, new_data[-1]['timestamp'])
         else:
             print >> sys.stderr, "InfluxDB Query retunred no results!"
 
