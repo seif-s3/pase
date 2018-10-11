@@ -9,6 +9,23 @@ import requests
 from predictmod import db_helper
 
 
+def reformat_influx_series(series):
+    ret = []
+    for v in series['values']:
+        ret.append({'timestamp': v[0], 'value': v[1]})
+    return ret
+
+
+def append_dataset(model_id, new_data):
+    # The /datasets/influx directory will always contain all data used to train a specific model.
+    # Everytime we fetch new data from Influx, we append the training data file.
+    # Open model file in append mode.
+    f = open('/datasets/influx/{}.csv'.format(model_id), 'a')
+    for point in new_data:
+        f.write("{},{}\n".format(point['timestamp'], point['value']))
+    f.close()
+
+
 def job():
     active_model_id = db_helper.get_active_model()
     if not active_model_id:
@@ -43,6 +60,10 @@ def job():
         if 'series' in results[0] and len(results[0]['series']) >= 1:
             series = results[0]['series'][0]
             print >> sys.stderr, "FETCHED ", len(series['values']), " RECORDS!"
+            new_data = reformat_influx_series(series)
+            # Save new training data to CSV
+            append_dataset(active_model_id, new_data)
+            # TODO: Retrain model and update params
         else:
             print >> sys.stderr, "InfluxDB Query retunred no results!"
 
