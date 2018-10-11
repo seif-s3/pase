@@ -7,6 +7,7 @@ Additionally, moedl will be retrained using more data and updated accordingly.
 import sys
 import requests
 from predictmod import db_helper
+from predictmod.forecast_models.arima import ArimaModel
 
 
 def reformat_influx_series(series):
@@ -64,6 +65,8 @@ def job():
             # Save new training data to CSV
             append_dataset(active_model_id, new_data)
             # TODO: Retrain model and update params
+            model = ArimaModel(retrain=True, model_id=active_model_id)
+            model.pklize(active_model_id)
             db_helper.update_model_input(active_model_id, new_data[-1]['timestamp'])
         else:
             print >> sys.stderr, "InfluxDB Query retunred no results!"
