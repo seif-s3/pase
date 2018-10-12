@@ -67,7 +67,7 @@ def job():
             )
             print >> sys.stderr, "Difference in predictions: ", distance
             # TODO: Change threshold value!!
-            if distance >= 10:
+            if distance >= 1:
                 # Invalidate old predictions
                 db_helper.invalidate_predictions(predictions['_id'])
                 # Save new predictions:
@@ -100,9 +100,10 @@ def job():
                 print >> sys.stderr, "Notified {}".format(notify_url)
                 print >> sys.stderr, "Result {}".format(result)
 
-                if not fail:
-                    # Update subscriber
-                    db_helper.update_subscriber_predictions(s, new_predictions_id)
+                if not fail and result.status_code == 200:
+                    # Update subscriber only if request was successfully received by subscriber
+                    updated = db_helper.update_subscriber_predictions(s['_id'], new_predictions_id)
+                    print >> sys.stderr, updated
 
         else:
             print >> sys.stderr, """

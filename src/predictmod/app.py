@@ -45,7 +45,7 @@ def update_model():
         from predictmod.cron import update_model
         update_model.job()
     except Exception as e:
-        print >> sys.stderr, "Exception caught while running job!"
+        print >> sys.stderr, "Exception caught while running update_model job!"
         print >> sys.stderr, e
 
 
@@ -56,7 +56,7 @@ def notify_subscribers():
         from predictmod.cron import notify_subscribers
         notify_subscribers.job()
     except Exception as e:
-        print >> sys.stderr, "Exception caught while running job!"
+        print >> sys.stderr, "Exception caught while running notify_subscribers job!"
         print >> sys.stderr, e
 
 

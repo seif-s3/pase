@@ -39,18 +39,21 @@ def get_subscriber_by_id(sub_id):
 
 
 def update_subscriber_predictions(sub_id, pred_id):
+    subscriber_data = get_subscriber_by_id(sub_id)
+    notified_at = subscriber_data['notified_at']
+    notified_at.append(utcnow())
+
     query_result = mongo.db.subscribers.find_one_and_update(
         {'_id': ObjectId(sub_id)},
         {
-            "$set":
-                {
-                    "predictions": get_predictions_by_id(pred_id)
-                }
+            "$set": {
+                "predictions": get_predictions_by_id(pred_id),
+                "notified_at": notified_at
+            }
         }
     )
-    if query_result:
-        return True
-    return False
+    encoder = MongoEncoder()
+    return json.loads(encoder.encode(query_result))
 
 
 def get_predictions_by_id(pred_id):
@@ -62,8 +65,7 @@ def get_predictions_by_id(pred_id):
 
 def save_predictions(obj):
     inserted = mongo.db.predictions.insert_one(obj)
-    encoder = MongoEncoder()
-    return encoder.encode(inserted.inserted_id)
+    return str(inserted.inserted_id)
 
 
 def invalidate_predictions(pred_id):
