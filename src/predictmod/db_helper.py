@@ -23,6 +23,14 @@ def get_model_by_id(model_id):
     return json.loads(encoder.encode(query_result))
 
 
+def get_all_subscribers():
+    # Returns a Subscriber as a JSON doc
+    query_result = mongo.db.subscribers.find()
+    encoder = MongoEncoder()
+    docs = [json.loads(encoder.encode(doc)) for doc in query_result]
+    return docs
+
+
 def get_subscriber_by_id(sub_id):
     # Returns a Subscriber as a JSON doc
     query_result = mongo.db.subscribers.find_one({'_id': ObjectId(sub_id)})
@@ -30,9 +38,44 @@ def get_subscriber_by_id(sub_id):
     return json.loads(encoder.encode(query_result))
 
 
+def update_subscriber_predictions(sub_id, pred_id):
+    subscriber_data = get_subscriber_by_id(sub_id)
+    notified_at = subscriber_data['notified_at']
+    notified_at.append(utcnow())
+
+    query_result = mongo.db.subscribers.find_one_and_update(
+        {'_id': ObjectId(sub_id)},
+        {
+            "$set": {
+                "predictions": get_predictions_by_id(pred_id),
+                "notified_at": notified_at
+            }
+        }
+    )
+    encoder = MongoEncoder()
+    return json.loads(encoder.encode(query_result))
+
+
 def get_predictions_by_id(pred_id):
     # Returns a Prediction as a JSON doc
     query_result = mongo.db.predictions.find_one({'_id': ObjectId(pred_id)})
+    encoder = MongoEncoder()
+    return json.loads(encoder.encode(query_result))
+
+
+def save_predictions(obj):
+    inserted = mongo.db.predictions.insert_one(obj)
+    return str(inserted.inserted_id)
+
+
+def invalidate_predictions(pred_id):
+    # Returns a Prediction as a JSON doc
+    query_result = mongo.db.predictions.find_one_and_update(
+        {'_id': ObjectId(pred_id)},
+        {
+            '$set': {"is_valid": False, "invalidated_at": utcnow()}
+        }
+    )
     encoder = MongoEncoder()
     return json.loads(encoder.encode(query_result))
 

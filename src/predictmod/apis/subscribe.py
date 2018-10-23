@@ -15,7 +15,6 @@ from predictmod import db_helper
 def makeSubscribeParser(for_update=False):
     parser = reqparse.RequestParser(trim=True)
     parser.add_argument('url', required=True, nullable=False)
-    parser.add_argument('thresholds', action='append', required=True, nullable=False)
     parser.add_argument('predictions_id', required=True, nullable=False)
     return parser
 
@@ -44,28 +43,10 @@ class Subscribe(rest.Resource):
                     }
                 )
 
-            # Check thresholds are equal in length to predictions
-            if len(predictions['values']) != len(args.thresholds):
-                return flask.jsonify(
-                    {
-                        'status': '500',
-                        'error':
-                            '''Thresholds length do not match predictions.
-                            Got {} expected {}'''.format(
-                                len(args.thresholds), len(predictions['values']))
-                    }
-                )
-
-            # Cast thresholds to floats
-            float_thresholds = []
-            for t in args.thresholds:
-                float_thresholds.append(float(t))
-
             # Save subscriber
             doc = {
                 'url': args.url,
                 'predictions': predictions,
-                'thresholds': float_thresholds,
                 'registered_at': utils.utcnow(),
                 'notified_at': []
             }

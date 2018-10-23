@@ -35,6 +35,7 @@ mongo = PyMongo(app)
 api = Api(app, catch_all_404s=True)
 
 
+# ===================================== CRON JOBS ================================================ #
 # 'interval' jobs run after a certain tim
 # 'cron' jobs run at a specified hour/minute
 @scheduler.scheduled_job('interval', minutes=1)
@@ -44,10 +45,22 @@ def update_model():
         from predictmod.cron import update_model
         update_model.job()
     except Exception as e:
-        print >> sys.stderr, "Exception caught while running job!"
+        print >> sys.stderr, "Exception caught while running update_model job!"
         print >> sys.stderr, e
 
 
+@scheduler.scheduled_job('interval', minutes=1)
+def notify_subscribers():
+    try:
+        print >> sys.stderr, "Triggering notify_subscribers job: ", datetime.datetime.now()
+        from predictmod.cron import notify_subscribers
+        notify_subscribers.job()
+    except Exception as e:
+        print >> sys.stderr, "Exception caught while running notify_subscribers job!"
+        print >> sys.stderr, e
+
+
+# ===================================== Endpoints ================================================ #
 @app.route('/')
 def healthcheck():
     return flask.jsonify(
