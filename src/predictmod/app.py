@@ -7,7 +7,6 @@ from flask_pymongo import PyMongo
 from flask_restful import Api
 from flask_cors import CORS
 from apscheduler.schedulers.background import BackgroundScheduler
-from threading import Thread
 
 
 scheduler = BackgroundScheduler(coalesce=True, timezone='utc')
@@ -42,6 +41,13 @@ app.config['MONGO_URI'] = os.environ.get(
 )
 
 mongo = PyMongo(app)
+
+# Influx DB Config
+# This InfluxDB will be the source of new readings
+app.config['INFLUX_HOST'] = os.environ.get('INFLUX_URL', 'http://host.docker.internal:8086')
+app.config['INFLUX_DB'] = os.environ.get('INFLUX_DB', 'prometheus')
+app.config['INFLUX_USER'] = os.environ.get('INFLUX_USER', 'admin')
+app.config['INFLUX_PASS'] = os.environ.get('INFLUX_PASS', 'admin')
 
 api = Api(app, catch_all_404s=True)
 
@@ -79,7 +85,11 @@ def healthcheck():
             'prediction-module': 'OK',
             'mongodb': app.config['MONGODB_DB'],
             'mongo_host': app.config['MONGODB_HOST'],
-            'mongo_port': app.config['MONGODB_PORT']
+            'mongo_port': app.config['MONGODB_PORT'],
+            'influx_host': app.config['INFLUX_HOST'],
+            'influx_db': app.config['INFLUX_DB'],
+            'influx_user': app.config['INFLUX_USER'],
+            'influx_pass': app.config['INFLUX_PASS']
         }
     )
 

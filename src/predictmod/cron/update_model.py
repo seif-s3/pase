@@ -8,6 +8,7 @@ Additionally, moedl will be retrained using more data and updated accordingly.
 import sys
 import requests
 from predictmod import db_helper
+from predictmod.app import app
 from predictmod.forecast_models.arima import ArimaModel
 
 
@@ -29,6 +30,11 @@ def append_dataset(model_id, new_data):
 
 
 def job():
+    INFLUX_HOST = app.config.get('INFLUX_HOST', 'http://host.docker.internal:8086')
+    INFLUX_DB = app.config.get('INFLUX_DB', 'prometheus')
+    INFLUX_USER = app.config.get('INFLUX_USER', 'admin')
+    INFLUX_PASS = app.config.get('INFLUX_PASS', 'admin')
+
     active_model_id = db_helper.get_active_model()
     if not active_model_id:
         print >> sys.stderr, "Error: No Active model"
@@ -51,12 +57,12 @@ def job():
     """.format(granularity=granularity, end_time=input_end)
     print >> sys.stderr, influx_query
     payload = {
-        'u': 'admin',
-        'p': 'admin',
-        'db': 'prometheus',
+        'u': INFLUX_USER,
+        'p': INFLUX_PASS,
+        'db': INFLUX_DB,
         'q': influx_query
     }
-    response = requests.post("http://host.docker.internal:8086/query", data=payload)
+    response = requests.post(INFLUX_HOST + "/query", data=payload)
     results = response.json()['results']
     if len(results) > 0:
         if 'series' in results[0] and len(results[0]['series']) >= 1:
