@@ -98,3 +98,4 @@ import apis.predict
 import apis.models
 import apis.datasets
 import apis.subscribe
+import apis.config
