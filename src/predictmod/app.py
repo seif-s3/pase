@@ -25,10 +25,21 @@ CORS(app, origins=[r'.*localhost:5000$',
 app.config['UPLOAD_FOLDER'] = '/datasets'
 
 # MongoDB Initialization
-app.config['MONGODB_HOST'] = os.environ.get('MONGODB_HOST', 'localhost')
+app.config['MONGODB_HOST'] = os.environ.get('MONGODB_HOST', 'mongodb')
 app.config['MONGODB_PORT'] = os.environ.get('MONGODB_PORT', 27017)
+app.config['MONGODB_USER'] = os.environ.get('MONGODB_USER', 'root')
+app.config['MONGODB_PASS'] = os.environ.get('MONGODB_PASS', 'example')
+app.config['MONGODB_DB'] = os.environ.get('MONGODB_DB', 'pase')
+
 app.config['MONGO_URI'] = os.environ.get(
-    'MONGODB_URI', 'mongodb://{user}:{pwd}@mongodb:27017/pase'.format(user='root', pwd='example'))
+    'MONGODB_URI', 'mongodb://{user}:{pwd}@{host}:{port}/{db}'.format(
+        user=app.config['MONGODB_USER'],
+        pwd=app.config['MONGODB_PASS'],
+        host=app.config['MONGODB_HOST'],
+        port=app.config['MONGODB_PORT'],
+        db=app.config['MONGODB_DB']
+    )
+)
 
 mongo = PyMongo(app)
 
@@ -66,7 +77,9 @@ def healthcheck():
     return flask.jsonify(
         {
             'prediction-module': 'OK',
-            'mongodb': 'mongodb://mongodb:27017/pase'
+            'mongodb': app.config['MONGODB_DB'],
+            'mongo_host': app.config['MONGODB_HOST'],
+            'mongo_port': app.config['MONGODB_PORT']
         }
     )
 
