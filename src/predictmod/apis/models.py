@@ -1,12 +1,14 @@
-from predictmod.app import app, api, mongo
+from predictmod.app import app, api, mongo, scheduler
 from flask_restful import reqparse
 import flask_restful as rest
 import flask
 import json
 import shutil
-from predictmod.utils import MongoEncoder, get_datasets
+import threading
+import sys
+from predictmod.utils import MongoEncoder, get_datasets, utcnow
 from predictmod import db_helper
-from predictmod.forecast_models import arima
+from predictmod.forecast_models import arima, autoarima
 
 
 def makeTrainModelOnCsvParser(for_update=False):
@@ -95,7 +97,6 @@ class ActivateModel(rest.Resource):
                 dataset = model_attributes['metadata']['dataset']
                 if model_attributes['input_source'] == 'csv':
                     # If model was trained using a csv file
-                    import sys
                     print >> sys.stderr, "Copying:", dataset, "to", '/model_inputs/{}.csv'.format(
                         model_id)
                     shutil.copyfile(
@@ -118,6 +119,16 @@ class ActivateModel(rest.Resource):
             )
 
 
+def backgroundAutoArima(task_id, dataset):
+    # AutoArima takes too long to train. We train on a separate thread and return the result
+    db_helper.update_task_by_id(task_id, status='running', started_at=utcnow())
+    model = autoarima.AutoArimaModel(dataset=dataset)
+    model.train_model(model.training_data, model.testing_data)
+    model_id = model.save_model(dataset)
+    db_helper.update_task_by_id(
+        task_id, status='finished', model_id=model_id, completed_at=utcnow())
+
+
 class TrainModelOnCsv(rest.Resource):
 
     def post(self):
@@ -132,14 +143,37 @@ class TrainModelOnCsv(rest.Resource):
                 }
             )
         if args.algorithm == 'ARIMA':
-            """Train model from instana data."""
             model = arima.ArimaModel(dataset=args.dataset)
             test, predictions = model.train_model(model.training_data, model.testing_data)
             model_id = model.save_model(args.dataset)
             return flask.jsonify(db_helper.get_model_by_id(model_id))
+        elif args.algorithm == 'AutoARIMA':
+            # AutoArima takes too long to train. We train on a separate thread and return the result
+            inserted_task = mongo.db.tasks.insert_one(
+                {'algorithm': 'AutoARIMA', 'status': 'pending'})
+            task_id = str(inserted_task.inserted_id)
+
+            # Monkey Patch: Use scheduler executors to run job then remove it
+            scheduler.add_job(backgroundAutoArima, args=(task_id, args.dataset))
+            print >> sys.stderr, "Scheduled job"
+            return flask.jsonify(
+                {
+                    'message': 'Training started. Check /training?task_id=<> for status',
+                    'task_id': task_id
+                }
+            )
+            # model.train_model(model.training_data, model.testing_data)
+            # model_id = model.save_model(args.dataset)
+
+
+class TrainingStatus(rest.Resource):
+    def get(self):
+        task_id = flask.request.args.get('task_id')
+        return flask.jsonify(db_helper.get_task_by_id(task_id))
 
 
 api.add_resource(Models, '/models')
 api.add_resource(ActivateModel, '/activate_model/<model_id>')
 api.add_resource(ActiveModel, '/active_model')
 api.add_resource(TrainModelOnCsv, '/train_model_csv')
+api.add_resource(TrainingStatus, '/training')
