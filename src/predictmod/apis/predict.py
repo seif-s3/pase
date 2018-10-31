@@ -6,6 +6,32 @@ import flask_restful as rest
 import flask
 import datetime
 import sys
+import pytz
+
+
+def validate_bounds(start, end):
+    """
+    Function that validates start and end timestamps are valid.
+
+    A valid pair of timestamps for predictions must fulfill the following conditions:
+    1- Format matches %Y-%m-%dT%H:%M:%SZ
+    2- end_time > start_time
+    3- start_time > now : We want to forecast the future
+    """
+    try:
+        start = pytz.UTC.localize(datetime.datetime.strptime(start, '%Y-%m-%dT%H:%M:%SZ'))
+        end = pytz.UTC.localize(datetime.datetime.strptime(end, '%Y-%m-%dT%H:%M:%SZ'))
+
+    except:
+        return False, "Formats don't match %Y-%m-%dT%H:%M:%SZ"
+
+    if start > end:
+        return False, "start_time should be before end_time"
+
+    if start <= utils.utcnow():
+        return False, "start_time must be in the future"
+
+    return True
 
 
 class Predict(rest.Resource):
@@ -20,7 +46,14 @@ class Predict(rest.Resource):
                 return flask.jsonify({'error': 'Missing query param: end_time'})
 
             # TODO: Validate params are in expected format
-
+            valid, err = validate_bounds(start_time, end_time)
+            if not valid:
+                return flask.jsonify(
+                    {
+                        'status': 400,
+                        'error': err
+                    }
+                )
             # Granularity by default is 1 hour
             '''
             Steps:
