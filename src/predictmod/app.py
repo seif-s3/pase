@@ -55,7 +55,6 @@ api = Api(app, catch_all_404s=True)
 # ===================================== CRON JOBS ================================================ #
 # 'interval' jobs run after a certain tim
 # 'cron' jobs run at a specified hour/minute
-@scheduler.scheduled_job('interval', minutes=1)
 def update_model():
     try:
         print >> sys.stderr, "Triggering update_model job: ", datetime.datetime.now()
@@ -66,16 +65,7 @@ def update_model():
         print >> sys.stderr, e
 
 
-@scheduler.scheduled_job('interval', minutes=1)
-def notify_subscribers():
-    try:
-        print >> sys.stderr, "Triggering notify_subscribers job: ", datetime.datetime.now()
-        from predictmod.cron import notify_subscribers
-        notify_subscribers.job()
-    except Exception as e:
-        print >> sys.stderr, "Exception caught while running notify_subscribers job!"
-        print >> sys.stderr, e
-
+update_model_job = scheduler.add_job(update_model, 'interval', minutes=1)
 
 # ===================================== Endpoints ================================================ #
 @app.route('/')

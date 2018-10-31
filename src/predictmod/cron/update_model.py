@@ -7,9 +7,20 @@ Additionally, moedl will be retrained using more data and updated accordingly.
 """
 import sys
 import requests
+import datetime
 from predictmod import db_helper
 from predictmod.app import app
 from predictmod.forecast_models.arima import ArimaModel
+from predictmod.cron import notify_subscribers
+
+
+def start_notify_subscribers():
+    try:
+        print >> sys.stderr, "Triggering notify_subscribers job: ", datetime.datetime.now()
+        notify_subscribers.job()
+    except Exception as e:
+        print >> sys.stderr, "Exception caught while running notify_subscribers job!"
+        print >> sys.stderr, e
 
 
 def reformat_influx_series(series):
@@ -75,7 +86,9 @@ def job():
             model = ArimaModel(retrain=True, model_id=active_model_id)
             model.pklize(active_model_id)
             db_helper.update_model_input(active_model_id, new_data[-1]['timestamp'])
+
+            # If model is retrained, let's notify subscribers
+            start_notify_subscribers()
         else:
             print >> sys.stderr, "InfluxDB Query retunred no results!"
-
     return
