@@ -38,6 +38,25 @@ def get_subscriber_by_id(sub_id):
     return json.loads(encoder.encode(query_result))
 
 
+def get_task_by_id(task_id):
+    # Returns a Subscriber as a JSON doc
+    query_result = mongo.db.tasks.find_one({'_id': ObjectId(task_id)})
+    encoder = MongoEncoder()
+    return json.loads(encoder.encode(query_result))
+
+
+def update_task_by_id(task_id, **kwargs):
+    # Returns a Task as a JSON doc
+    query_result = mongo.db.tasks.find_one_and_update(
+        {'_id': ObjectId(task_id)},
+        {
+            '$set': kwargs
+        }
+    )
+    encoder = MongoEncoder()
+    return json.loads(encoder.encode(query_result))
+
+
 def update_subscriber_predictions(sub_id, pred_id):
     subscriber_data = get_subscriber_by_id(sub_id)
     notified_at = subscriber_data['notified_at']
