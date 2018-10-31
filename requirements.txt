@@ -1,6 +1,9 @@
+amqp==2.3.2
 aniso8601==3.0.0
 APScheduler==3.5.3
 backports.functools-lru-cache==1.5
+billiard==3.5.0.4
+celery==4.2.1
 certifi==2018.8.24
 chardet==3.0.4
 click==6.7
@@ -20,6 +23,7 @@ idna==2.7
 itsdangerous==0.24
 Jinja2==2.10
 kiwisolver==1.0.1
+kombu==4.2.1
 MarkupSafe==1.0
 matplotlib==2.2.2
 mongoengine==0.15.3
@@ -46,4 +50,5 @@ subprocess32==3.5.1
 tzlocal==1.5.1
 urllib3==1.23
 uWSGI==2.0.17.1
+vine==1.1.4
 Werkzeug==0.14.1
