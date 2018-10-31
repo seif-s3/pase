@@ -55,6 +55,10 @@ api = Api(app, catch_all_404s=True)
 # ===================================== CRON JOBS ================================================ #
 # 'interval' jobs run after a certain tim
 # 'cron' jobs run at a specified hour/minute
+# Active model will be retrained every 1 minute by default. Can by changed by config
+app.config['RETRAIN_INTERVAL'] = 1
+
+
 def update_model():
     try:
         print >> sys.stderr, "Triggering update_model job: ", datetime.datetime.now()

@@ -4,6 +4,7 @@ import flask_restful as rest
 from flask_restful import reqparse
 from flask import jsonify
 from predictmod.app import api, app
+from predictmod.app import update_model_job
 
 
 def makeInfluxConfigParser(for_update=False):
@@ -18,6 +19,12 @@ def makeInfluxConfigParser(for_update=False):
 def makeTestConfigParser(for_update=False):
     parser = reqparse.RequestParser(trim=True)
     parser.add_argument('test', required=True, nullable=False)
+    return parser
+
+
+def makeCronConfigParser(for_update=False):
+    parser = reqparse.RequestParser(trim=True)
+    parser.add_argument('interval', required=True, type=int, nullable=False)
     return parser
 
 
@@ -43,6 +50,29 @@ class InfluxConfig(rest.Resource):
         )
 
 
+class CronConfig(rest.Resource):
+    def post(self):
+        args = makeCronConfigParser().parse_args()
+        try:
+            print >> sys.stderr, 'Rescheduling Cron Job to {} minutes'.format(args['interval'])
+            app.config['RETRAIN_INTERVAL'] = args['interval']
+            update_model_job.reschedule('interval', minutes=args['interval'])
+            return jsonify(
+                {
+                    'interval': app.config['RETRAIN_INTERVAL']
+                }
+            )
+        except Exception as e:
+            print >> sys.stderr, 'Error rescheduling Cron Job!\n', e
+
+    def get(self):
+        return jsonify(
+            {
+                'interval': app.config['RETRAIN_INTERVAL']
+            }
+        )
+
+
 class TestConfig(rest.Resource):
     def post(self):
         args = makeTestConfigParser().parse_args()
@@ -62,4 +92,5 @@ class TestConfig(rest.Resource):
         )
 
 api.add_resource(InfluxConfig, '/config/influx')
+api.add_resource(CronConfig, '/config/cron')
 api.add_resource(TestConfig, '/config/test')
