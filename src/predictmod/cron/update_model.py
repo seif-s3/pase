@@ -11,6 +11,7 @@ import datetime
 from predictmod import db_helper
 from predictmod.app import app
 from predictmod.forecast_models.arima import ArimaModel
+from predictmod.forecast_models.autoarima import AutoArimaModel
 from predictmod.cron import notify_subscribers
 
 
@@ -82,8 +83,16 @@ def job():
             new_data = reformat_influx_series(series)
             # Save new training data to CSV
             append_dataset(active_model_id, new_data)
-            # TODO: Retrain model and update params
-            model = ArimaModel(retrain=True, model_id=active_model_id)
+
+            if model['algorithm'] == 'ARIMA':
+                model = ArimaModel(retrain=True, model_id=active_model_id)
+            elif model['algorithm'] == 'AutoARIMA':
+                new_values = []
+                for v in series['values']:
+                    new_values.append(v[1])
+                model = AutoArimaModel(
+                    retrain=True, model_id=active_model_id, new_data=new_values)
+
             model.pklize(active_model_id)
             db_helper.update_model_input(active_model_id, new_data[-1]['timestamp'])
 

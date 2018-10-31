@@ -19,11 +19,13 @@ class AutoArimaModel(object):
         # Replace NaNs with Mean
         self.data_clean[np.isnan(self.data_clean)] = np.nanmean(self.data_clean)
 
-    def __init__(self, retrain=False, load=False, model_id=None, dataset=None, train=0.7, test=0.3):
+    def __init__(
+        self, retrain=False, load=False, model_id=None, dataset=None, train=0.7, test=0.3, new_data=None
+    ):
         if load and retrain is False:
             self.load_model(model_id)
-        elif retrain:
-            self.retrain_model(model_id)
+        elif retrain and new_data:
+            self.retrain_model(model_id, new_data)
         elif load is False and retrain is False and dataset:
             # Instana data has a special format so it will be parsed differently
             if dataset == 'instana-with-timestamps.csv':
@@ -68,11 +70,11 @@ class AutoArimaModel(object):
         forecast = self.model_fit.predict(K)
         return forecast
 
-    # def retrain_model(self, model_id, new_data):
-    #     # Adds new observations to model and retrains it for future predictions
-    #     print >> sys.stderr, "Retraining AutoARIMA Model ", model_id
-    #     if self.model_fit:
-    #         self.model_fit.add_new_observations(new_data)
+    def retrain_model(self, model_id, new_data):
+        # Adds new observations to model and retrains it for future predictions
+        print >> sys.stderr, "Retraining AutoARIMA Model ", model_id
+        self.load_model(model_id)
+        self.model_fit.add_new_observations(new_data)
 
     def pklize(self, model_id):
         print >> sys.stderr, "Saving model file /trained_models/{}.pkl".format(
