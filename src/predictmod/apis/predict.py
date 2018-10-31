@@ -6,6 +6,32 @@ import flask_restful as rest
 import flask
 import datetime
 import sys
+import pytz
+
+
+def validate_bounds(start, end):
+    """
+    Function that validates start and end timestamps are valid.
+
+    A valid pair of timestamps for predictions must fulfill the following conditions:
+    1- Format matches %Y-%m-%dT%H:%M:%SZ
+    2- end_time > start_time
+    3- start_time > now : We want to forecast the future
+    """
+    try:
+        start = pytz.UTC.localize(datetime.datetime.strptime(start, '%Y-%m-%dT%H:%M:%SZ'))
+        end = pytz.UTC.localize(datetime.datetime.strptime(end, '%Y-%m-%dT%H:%M:%SZ'))
+
+    except:
+        return False, "Formats don't match %Y-%m-%dT%H:%M:%SZ"
+
+    if start > end:
+        return False, "start_time should be before end_time"
+
+    if start <= utils.utcnow():
+        return False, "start_time must be in the future"
+
+    return True
 
 
 class Predict(rest.Resource):
@@ -20,7 +46,14 @@ class Predict(rest.Resource):
                 return flask.jsonify({'error': 'Missing query param: end_time'})
 
             # TODO: Validate params are in expected format
-
+            valid, err = validate_bounds(start_time, end_time)
+            if not valid:
+                return flask.jsonify(
+                    {
+                        'status': 400,
+                        'error': err
+                    }
+                )
             # Granularity by default is 1 hour
             '''
             Steps:
@@ -54,37 +87,69 @@ class Predict(rest.Resource):
                 # end_time is the last timestamp to be send in the response
                 end_time = datetime.datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%SZ')
 
-                predictions = model.forecast(K)
+                # Check wheather we already have predictions for the same timeframe using the same
+                # model.
+                found_predictions = db_helper.find_predictions(
+                    start_time=start_time, end_time=end_time,
+                    granularity='hour', model=str(active_model), is_valid=True
+                )
 
-                # Discard first S predictions since they are not required in the response
-                predictions_trimmed = predictions[S:]
-                ret = []
-                arr = []
-                t = start_time
-                for p in predictions_trimmed:
-                    arr.append(p)
-                    ret.append({'timestamp': t.strftime('%Y-%m-%dT%H:%M:%SZ'), 'requests': p})
-                    t += datetime.timedelta(hours=1)
+                if found_predictions is None or (
+                        found_predictions['generated_at'] < model_attributes['acquisition_time']
+                ):
+                    # Model has been retrained using newer input, we should generate new preditcions
+                    if found_predictions:
+                        db_helper.invalidate_predictions(found_predictions['_id'])
+                    predictions = model.forecast(K)
 
-                to_save = {
-                    'start_time': start_time,
-                    'end_time': end_time,
-                    'values': arr,
-                    'granularity': 'hour',
-                    'is_valid': True,
-                    'generated_at': utils.utcnow(),
-                    'model': active_model
-                }
-                inserted = mongo.db.predictions.insert_one(to_save)
-                if inserted.inserted_id:
-                    return flask.jsonify(
-                        {
-                            'id': str(inserted.inserted_id),
-                            'values': ret,
-                            'start_time': start_time.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                            'end_time': end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
-                        }
-                    )
+                    # Discard first S predictions since they are not required in the response
+                    predictions_trimmed = predictions[S:]
+                    ret = []
+                    arr = []
+                    t = start_time
+                    for p in predictions_trimmed:
+                        arr.append(p)
+                        ret.append({'timestamp': t.strftime('%Y-%m-%dT%H:%M:%SZ'), 'requests': p})
+                        t += datetime.timedelta(hours=1)
+
+                    to_save = {
+                        'start_time': start_time,
+                        'end_time': end_time,
+                        'values': arr,
+                        'granularity': 'hour',
+                        'is_valid': True,
+                        'generated_at': utils.utcnow(),
+                        'model': active_model
+                    }
+                    inserted = mongo.db.predictions.insert_one(to_save)
+                    if inserted.inserted_id:
+                        return flask.jsonify(
+                            {
+                                'id': str(inserted.inserted_id),
+                                'values': ret,
+                                'start_time': start_time.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                                'end_time': end_time.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                                'model': str(active_model),
+                                'generated_at': utils.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                            }
+                        )
+                else:
+                    # Predictions we have are still valid, no need to generate new ones
+                    print >> sys.stderr, "Valid Predictions: ", found_predictions['generated_at']
+                    # Reformat predictions to expected response format
+                    t = start_time
+                    ret = []
+                    for p in found_predictions['values']:
+                        ret.append({'timestamp': t.strftime('%Y-%m-%dT%H:%M:%SZ'), 'requests': p})
+                        t += datetime.timedelta(hours=1)
+                    found_predictions['values'] = ret
+                    found_predictions['id'] = found_predictions['_id']
+                    # Hacky way of reformatting datetime
+                    found_predictions['generated_at'] = found_predictions['generated_at'][:-8] + "Z"
+                    del found_predictions['_id']
+                    del found_predictions['granularity']
+                    del found_predictions['is_valid']
+                    return flask.jsonify(found_predictions)
             else:
                 return flask.jsonify(
                     {
