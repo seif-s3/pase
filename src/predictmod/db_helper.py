@@ -63,6 +63,12 @@ def get_predictions_by_id(pred_id):
     return json.loads(encoder.encode(query_result))
 
 
+def find_predictions(**kwargs):
+    query_result = mongo.db.predictions.find_one(kwargs)
+    encoder = MongoEncoder()
+    return json.loads(encoder.encode(query_result))
+
+
 def save_predictions(obj):
     inserted = mongo.db.predictions.insert_one(obj)
     return str(inserted.inserted_id)
