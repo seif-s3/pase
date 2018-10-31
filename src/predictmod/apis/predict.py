@@ -1,5 +1,6 @@
 from predictmod.app import api, mongo
 from predictmod.forecast_models.arima import ArimaModel
+from predictmod.forecast_models.autoarima import AutoArimaModel
 from predictmod import db_helper
 from predictmod import utils
 import flask_restful as rest
@@ -7,6 +8,7 @@ import flask
 import datetime
 import sys
 import pytz
+import numpy as np
 
 
 def validate_bounds(start, end):
@@ -18,6 +20,7 @@ def validate_bounds(start, end):
     2- end_time > start_time
     3- start_time > now : We want to forecast the future
     """
+    print >> sys.stderr, start, end
     try:
         start = pytz.UTC.localize(datetime.datetime.strptime(start, '%Y-%m-%dT%H:%M:%SZ'))
         end = pytz.UTC.localize(datetime.datetime.strptime(end, '%Y-%m-%dT%H:%M:%SZ'))
@@ -31,7 +34,7 @@ def validate_bounds(start, end):
     if start <= utils.utcnow():
         return False, "start_time must be in the future"
 
-    return True
+    return True, None
 
 
 class Predict(rest.Resource):
@@ -45,7 +48,6 @@ class Predict(rest.Resource):
             if end_time is None:
                 return flask.jsonify({'error': 'Missing query param: end_time'})
 
-            # TODO: Validate params are in expected format
             valid, err = validate_bounds(start_time, end_time)
             if not valid:
                 return flask.jsonify(
@@ -64,9 +66,19 @@ class Predict(rest.Resource):
             active_model = db_helper.get_active_model()
             print >> sys.stderr, "Active Model: {}".format(active_model)
             if active_model:
-                model = ArimaModel(load=True, model_id=active_model)
                 model_attributes = db_helper.get_model_by_id(active_model)
 
+                if model_attributes['algorithm'] == 'ARIMA':
+                    model = ArimaModel(load=True, model_id=active_model)
+                elif model_attributes['algorithm'] == 'AutoARIMA':
+                    model = AutoArimaModel(load=True, model_id=active_model)
+                else:
+                    return flask.jsonify(
+                        {
+                            'status': 500,
+                            'message': 'Unknown model algorithm'
+                        }
+                    )
                 # K is the number of units (typically hours) we need to forecast
                 # K + 1 to include the start timestamp (consider it 0 indexed)
                 # S is the number of units to skip from input_end to start_time
@@ -159,9 +171,11 @@ class Predict(rest.Resource):
                     }
                 )
         except Exception as e:
+            import traceback
+            traceback.print_exc(file=sys.stderr)
             return flask.jsonify(
                 {
-                    'error': e.message
+                    'error': e.message,
                 }
             )
 
