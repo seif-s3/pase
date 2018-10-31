@@ -3,6 +3,7 @@ import os
 import datetime
 import flask
 import sys
+import requests
 from flask_pymongo import PyMongo
 from flask_restful import Api
 from flask_cors import CORS
@@ -74,6 +75,23 @@ update_model_job = scheduler.add_job(update_model, 'interval', minutes=1)
 # ===================================== Endpoints ================================================ #
 @app.route('/')
 def healthcheck():
+    # Check Influx Connection
+    payload = {
+        'u': app.config['INFLUX_USER'],
+        'p': app.config['INFLUX_PASS'],
+        'db': app.config['INFLUX_DB'],
+        'q': 'SHOW measurements'
+    }
+    try:
+        response = requests.post(app.config['INFLUX_HOST'] + "/query", data=payload)
+        if response.status_code == 200:
+            influx_ok = 'OK'
+        else:
+            print >> sys.stderr, response.text
+            influx_ok = 'BAD_CONFIG'
+    except Exception as e:
+        influx_ok = 'BAD_CONFIG'
+        print >> sys.stderr, e
     return flask.jsonify(
         {
             'prediction-module': 'OK',
@@ -83,7 +101,8 @@ def healthcheck():
             'influx_host': app.config['INFLUX_HOST'],
             'influx_db': app.config['INFLUX_DB'],
             'influx_user': app.config['INFLUX_USER'],
-            'influx_pass': app.config['INFLUX_PASS']
+            'influx_pass': app.config['INFLUX_PASS'],
+            'influx_connection': influx_ok
         }
     )
 

@@ -36,8 +36,16 @@ class InfluxConfig(rest.Resource):
             app.config['INFLUX_DB'] = args.get('influx_db')
             app.config['INFLUX_USER'] = args.get('influx_user')
             app.config['INFLUX_PASS'] = args.get('influx_pass')
+            return jsonify(
+                {
+                    'influx_host': app.config['INFLUX_HOST'],
+                    'influx_db': app.config['INFLUX_DB'],
+                    'influx_user': app.config['INFLUX_USER'],
+                    'influx_pass': app.config['INFLUX_PASS']
+                }
+            )
         except Exception as e:
-            print >> sys.stderr, 'Error reloading server to update config!\n', e
+            print >> sys.stderr, 'Error updating Influx Config!\n', e
 
     def get(self):
         return jsonify(
@@ -78,11 +86,13 @@ class TestConfig(rest.Resource):
         args = makeTestConfigParser().parse_args()
         try:
             app.config['TEST_CONFIG'] = args.get('test')
-            # Restart gunicorn gracefully to apply changes
-            # http://docs.gunicorn.org/en/stable/faq.html
-            print >> sys.stderr, "Set Test Config... Restarting!"
+            return jsonify(
+                {
+                    'test_config': app.config.get('TEST_CONFIG'),
+                }
+            )
         except Exception as e:
-            print >> sys.stderr, 'Error reloading server to update config!\n', e
+            print >> sys.stderr, 'Error updating config!\n', e
 
     def get(self):
         return jsonify(
