@@ -7,8 +7,20 @@ Additionally, moedl will be retrained using more data and updated accordingly.
 """
 import sys
 import requests
+import datetime
 from predictmod import db_helper
+from predictmod.app import app
 from predictmod.forecast_models.arima import ArimaModel
+from predictmod.cron import notify_subscribers
+
+
+def start_notify_subscribers():
+    try:
+        print >> sys.stderr, "Triggering notify_subscribers job: ", datetime.datetime.now()
+        notify_subscribers.job()
+    except Exception as e:
+        print >> sys.stderr, "Exception caught while running notify_subscribers job!"
+        print >> sys.stderr, e
 
 
 def reformat_influx_series(series):
@@ -29,6 +41,11 @@ def append_dataset(model_id, new_data):
 
 
 def job():
+    INFLUX_HOST = app.config.get('INFLUX_HOST', 'http://host.docker.internal:8086')
+    INFLUX_DB = app.config.get('INFLUX_DB', 'prometheus')
+    INFLUX_USER = app.config.get('INFLUX_USER', 'admin')
+    INFLUX_PASS = app.config.get('INFLUX_PASS', 'admin')
+
     active_model_id = db_helper.get_active_model()
     if not active_model_id:
         print >> sys.stderr, "Error: No Active model"
@@ -51,12 +68,12 @@ def job():
     """.format(granularity=granularity, end_time=input_end)
     print >> sys.stderr, influx_query
     payload = {
-        'u': 'admin',
-        'p': 'admin',
-        'db': 'prometheus',
+        'u': INFLUX_USER,
+        'p': INFLUX_PASS,
+        'db': INFLUX_DB,
         'q': influx_query
     }
-    response = requests.post("http://host.docker.internal:8086/query", data=payload)
+    response = requests.post(INFLUX_HOST + "/query", data=payload)
     results = response.json()['results']
     if len(results) > 0:
         if 'series' in results[0] and len(results[0]['series']) >= 1:
@@ -69,7 +86,9 @@ def job():
             model = ArimaModel(retrain=True, model_id=active_model_id)
             model.pklize(active_model_id)
             db_helper.update_model_input(active_model_id, new_data[-1]['timestamp'])
+
+            # If model is retrained, let's notify subscribers
+            start_notify_subscribers()
         else:
             print >> sys.stderr, "InfluxDB Query retunred no results!"
-
     return
