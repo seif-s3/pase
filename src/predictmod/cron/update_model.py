@@ -58,16 +58,25 @@ def job():
     # TODO change granularity dynamically here
     granularity = '1h'
 
-    influx_query = """
-        SELECT derivative(value, {granularity}) AS value
-        FROM (
-            SELECT MAX(value) AS value
-            FROM request_count
-            WHERE time > '{end_time}'
-            GROUP BY time({granularity})
-        )
-    """.format(granularity=granularity, end_time=input_end)
-    print >> sys.stderr, influx_query
+    if INFLUX_HOST == 'http://host.docker.internal:8086':
+        # Hack since local testing dumps cumulative requests to InfluxDB
+        influx_query = """
+        SELECT derivative(value, 1h) AS value
+                 FROM (
+                     SELECT MAX(value) AS value
+                     FROM request_count
+                     WHERE time > '2018-10-10T23:00:00Z'
+                     GROUP BY time(1h)
+                 )
+        """
+    else:
+        influx_query = """
+            SELECT max("value")
+            FROM "network/rx_rate"
+            WHERE time > {end_time}
+            GROUP BY {granularity}
+        """.format(granularity=granularity, end_time=input_end)
+
     payload = {
         'u': INFLUX_USER,
         'p': INFLUX_PASS,
