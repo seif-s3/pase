@@ -73,16 +73,18 @@ def job():
         influx_query = """
             SELECT max("value")
             FROM "network/rx_rate"
-            WHERE time > {end_time}
-            GROUP BY {granularity}
+            WHERE time > '{end_time}'
+            GROUP BY time({granularity})
         """.format(granularity=granularity, end_time=input_end)
 
     payload = {
         'u': INFLUX_USER,
         'p': INFLUX_PASS,
         'db': INFLUX_DB,
-        'q': influx_query
+        'q': influx_query,
+        'precision': "rfc3339"
     }
+    print >> sys.stderr, influx_query
     response = requests.post(INFLUX_HOST + "/query", data=payload)
     results = response.json()['results']
     if len(results) > 0:
