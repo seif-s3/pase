@@ -27,7 +27,7 @@ kombu==4.2.1
 MarkupSafe==1.0
 matplotlib==2.2.2
 mongoengine==0.15.3
-numpy==1.14.4
+numpy==1.22.0
 pandas==0.23.0
 patsy==0.5.0
 post==1.0.2
